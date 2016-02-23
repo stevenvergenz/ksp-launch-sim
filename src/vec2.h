@@ -10,32 +10,23 @@ protected:
 	double _y;
 
 public:
-	Vec2(double x, double y):_x(x), _y(y)
-	{}
+	Vec2();
+	Vec2(double x, double y);
 
-	double x() const {
-		return _x;
-	}
+	double x() const;
+	double y() const;
 
-	double y() const {
-		return _y;
-	}
+	double mag() const;
+	Vec2 squared() const;
+	Vec2 normalized() const;
 
-	double mag() const {
-		return sqrt( pow(_x,2) + pow(_y,2) );
-	}
-
-	Vec2 squared() const {
-		return Vec2(_x*_x, _y*_y);
-	}
 };
 
-Vec2 operator+(const Vec2 a, const Vec2 b){
-	return Vec2(a.x()+b.x(), a.y()+b.y());
-}
 
-Vec2 operator-(const Vec2 a, const Vec2 b){
-	return Vec2(a.x()-b.x(), a.y()-b.y());
-}
+Vec2 operator+(const Vec2& a, const Vec2& b);
+Vec2 operator-(const Vec2& a, const Vec2& b);
+Vec2 operator-(const Vec2& a);
+Vec2 operator*(const double a, const Vec2& b);
+Vec2 operator*(const Vec2& a, const double b);
 
 #endif // VEC2_H

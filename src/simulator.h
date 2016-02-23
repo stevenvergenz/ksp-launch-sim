@@ -3,8 +3,10 @@
 
 #include <QObject>
 #include <QRunnable>
+#include <cmath>
 
 #include "configs.h"
+#include "vec2.h"
 
 class Simulator : public QObject, public QRunnable
 {

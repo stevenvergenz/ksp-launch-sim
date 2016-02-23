@@ -12,9 +12,14 @@ MainWindow::MainWindow(QWidget *parent) :
 
 void MainWindow::startSim()
 {
-	SimulationConfig::ShipInfo ship = {100};
-	SimulationConfig::GoalInfo goal = {1000,1000};
-	SimulationConfig config(ship, KerbolSystem::Kerbin, goal);
+	//SimulationConfig::ShipInfo ship = {100};
+	//SimulationConfig::GoalInfo goal = {1000,1000};
+	SimulationConfig config;
+	//config.ship = ship;
+	config.body = KerbolSystem::Kerbin;
+	//config.goal = goal;
+	//config.duration = 10;
+
 	sim = new Simulator(config);
 
 	// connect slots
@@ -27,7 +32,8 @@ void MainWindow::startSim()
 
 void MainWindow::log(const QString &msg)
 {
-	ui->textEdit->append(msg);
+	QString str = QString("[%1] %2").arg(QDateTime::currentDateTime().toString("hh:mm")).arg(msg);
+	ui->textEdit->append(str);
 }
 
 MainWindow::~MainWindow()

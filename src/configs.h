@@ -1,16 +1,19 @@
 #ifndef CONFIGS
 #define CONFIGS
 
+#include "vec2.h"
+
 struct SimulationConfig
 {
 	struct ShipInfo
 	{
 		double mass; // kg
+		double maxThrust; // kN
 	} ship;
 
 	struct BodyInfo
 	{
-		double mass; // kg
+		double surfaceGravity; // m/s2
 		double radius; // m
 		double revolutionSpeed; // m/s at surface
 	} body;
@@ -21,32 +24,46 @@ struct SimulationConfig
 		double desiredPeriapsis; // m from surface
 	} goal;
 
-	int duration; // s
+	struct SimInfo
+	{
+		double duration; // s
+		double timeResolution; // s
+	} params;
 
 	SimulationConfig()
 	{
 		ship.mass = 1;
 
-		body.mass = 100;
+		body.surfaceGravity = 9.8;
 		body.radius = 100;
 		body.revolutionSpeed = 10;
 
 		goal.desiredApoapsis = 100;
 		goal.desiredPeriapsis = 100;
 
-		duration = 10;
+		params.duration = 100;
+		params.timeResolution = 0.1;
 	}
 
-	SimulationConfig(ShipInfo ship, BodyInfo body, GoalInfo goal)
-		: ship(ship), body(body), goal(goal)
+	SimulationConfig(ShipInfo ship, BodyInfo body, GoalInfo goal, SimInfo params)
+		: ship(ship), body(body), goal(goal), params(params)
 	{
 
 	}
 };
 
+struct SimFrame
+{
+	double time;
+
+	Vec2 position;
+	Vec2 velocity;
+	Vec2 orientation;
+};
+
 namespace KerbolSystem
 {
-	static SimulationConfig::BodyInfo Kerbin = {5.2915793e22, 600000, 174.94};
+	extern SimulationConfig::BodyInfo Kerbin;
 }
 
 #endif // CONFIGS

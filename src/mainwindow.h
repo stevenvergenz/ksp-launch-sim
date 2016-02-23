@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QThreadPool>
+#include <QDateTime>
 
 #include "configs.h"
 #include "simulator.h"

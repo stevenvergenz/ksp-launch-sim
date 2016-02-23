@@ -14,7 +14,9 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    simulator.cpp
+    simulator.cpp \
+    configs.cpp \
+    vec2.cpp
 
 HEADERS  += mainwindow.h \
     vec2.h \
