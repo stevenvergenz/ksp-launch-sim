@@ -13,19 +13,22 @@ class Simulator : public QObject, public QRunnable
 	Q_OBJECT
 
 public:
-	Simulator(SimulationConfig config);
+	Simulator(SimulationConfig* config);
+	~Simulator();
 
 	void run();
+	const SimFrame* getLastFlightData();
 
 signals:
-	void start(const QString& msg);
-	void update(const QString& msg);
-	void done(const QString& msg);
+	void start(const SimFrame* initFrame);
+	void update(const SimFrame* updateFrame);
+	void done();
 
 public slots:
 
 private:
-	SimulationConfig config;
+	SimulationConfig* config;
+	SimFrame* lastFlight;
 };
 
 #endif // SIMULATOR_H

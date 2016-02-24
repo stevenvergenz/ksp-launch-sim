@@ -54,11 +54,15 @@ struct SimulationConfig
 
 struct SimFrame
 {
+	SimulationConfig* config;
 	double time;
 
 	Vec2 position;
 	Vec2 velocity;
 	Vec2 orientation;
+
+	SimFrame* next;
+	SimFrame* prev;
 };
 
 namespace KerbolSystem

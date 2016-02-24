@@ -1,9 +1,12 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#define PI 3.141592653589
+
 #include <QMainWindow>
 #include <QThreadPool>
 #include <QDateTime>
+#include <cmath>
 
 #include "configs.h"
 #include "simulator.h"
@@ -22,11 +25,13 @@ public:
 
 public slots:
 	void startSim();
-	void log(const QString& msg);
+	void log(const SimFrame* frame = nullptr);
+	void analyseResults();
 
 private:
 	Ui::MainWindow *ui;
 	Simulator* sim;
+	SimulationConfig* config;
 };
 
 #endif // MAINWINDOW_H
