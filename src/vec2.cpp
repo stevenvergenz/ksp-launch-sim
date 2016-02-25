@@ -26,7 +26,7 @@ Vec2 Vec2::normalized() const {
 	if(_x == 0.0 && _y == 0.0)
 		return Vec2();
 	else
-		return Vec2(_x/(_x+_y), _y/(_x+_y));
+		return Vec2(_x/this->mag(), _y/this->mag());
 }
 
 

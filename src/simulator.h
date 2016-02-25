@@ -4,9 +4,12 @@
 #include <QObject>
 #include <QRunnable>
 #include <cmath>
+#include <cstdio>
 
 #include "configs.h"
 #include "vec2.h"
+#include "simframe.h"
+
 
 class Simulator : public QObject, public QRunnable
 {

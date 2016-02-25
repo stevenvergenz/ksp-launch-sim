@@ -5,11 +5,22 @@
 
 struct SimulationConfig
 {
-	struct ShipInfo
+	struct StageInfo
 	{
-		double mass; // kg
+		StageInfo()
+			: dryMass(0), totalMass(0), maxThrust(0), Isp(0)
+		{}
+		StageInfo(double dry, double total, double thrust, double Isp)
+			: dryMass(dry), totalMass(total), maxThrust(thrust), Isp(Isp)
+		{}
+
+		double dryMass; // kg
+		double totalMass; // kg
 		double maxThrust; // kN
-	} ship;
+		double Isp; // s
+	};
+	StageInfo stages[10];
+	int stageCount;
 
 	struct BodyInfo
 	{
@@ -29,41 +40,8 @@ struct SimulationConfig
 		double duration; // s
 		double timeResolution; // s
 	} params;
-
-	SimulationConfig()
-	{
-		ship.mass = 1;
-
-		body.surfaceGravity = 9.8;
-		body.radius = 100;
-		body.revolutionSpeed = 10;
-
-		goal.desiredApoapsis = 100;
-		goal.desiredPeriapsis = 100;
-
-		params.duration = 100;
-		params.timeResolution = 0.1;
-	}
-
-	SimulationConfig(ShipInfo ship, BodyInfo body, GoalInfo goal, SimInfo params)
-		: ship(ship), body(body), goal(goal), params(params)
-	{
-
-	}
 };
 
-struct SimFrame
-{
-	SimulationConfig* config;
-	double time;
-
-	Vec2 position;
-	Vec2 velocity;
-	Vec2 orientation;
-
-	SimFrame* next;
-	SimFrame* prev;
-};
 
 namespace KerbolSystem
 {

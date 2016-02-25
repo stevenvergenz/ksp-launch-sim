@@ -18,12 +18,14 @@ SOURCES += main.cpp\
     simulator.cpp \
     configs.cpp \
     vec2.cpp \
-    pathgraph.cpp
+    pathgraph.cpp \
+    simframe.cpp
 
 HEADERS  += mainwindow.h \
     vec2.h \
     simulator.h \
     configs.h \
-    pathgraph.h
+    pathgraph.h \
+    simframe.h
 
 FORMS    += mainwindow.ui

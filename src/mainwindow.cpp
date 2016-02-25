@@ -10,15 +10,19 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->setupUi(this);
 
 	connect(ui->btnStart, SIGNAL(clicked(bool)), this, SLOT(startSim()));
-	connect(ui->horizontalScale, SIGNAL(valueChanged(int)), ui->graph, SLOT(setHorizontalScale(int)));
-	connect(ui->verticalScale, SIGNAL(valueChanged(int)), ui->graph, SLOT(setVerticalScale(int)));
+	connect(ui->verticalScale, SIGNAL(valueChanged(int)), ui->graph, SLOT(setScale(int)));
+
+	config->stages[0] = SimulationConfig::StageInfo(1950.0, 3000.0, 192.0, 165.0);
+	config->stages[1] = SimulationConfig::StageInfo(450.0, 1500.0, 192.0, 165.0);
+	config->stageCount = 2;
+	config->body = KerbolSystem::Kerbin;
+	config->params.duration = 1000.0;
+	config->params.timeResolution = 0.1;
 }
 
 void MainWindow::startSim()
 {
 	ui->graph->clear();
-	config->body = KerbolSystem::Kerbin;
-
 	sim = new Simulator(config);
 
 	// connect slots
@@ -31,15 +35,27 @@ void MainWindow::startSim()
 
 void MainWindow::log(const SimFrame * frame)
 {
-	QString str = QString("[%1] [%2] %3m altitude at %4m/s ")
-		.arg(QDateTime::currentDateTime().toString("hh:mm"))
-		.arg(frame->time, 4, 'f', 2)
-		.arg(frame->position.mag() - frame->config->body.radius, 4, 'f', 2)
-		.arg(frame->velocity.mag(), 4, 'f', 2);
-	ui->textEdit->append(str);
+	static double lastReportTime = 0.0;
+	if(frame->time > lastReportTime)
+	{
+		lastReportTime = frame->time;
+		QString str = QString("[%1] [%2] %3m altitude at %4m/s")
+			.arg(QDateTime::currentDateTime().toString("hh:mm"))
+			.arg(frame->time, 4, 'f', 2)
+			.arg(frame->position.mag() - frame->config->body.radius, 4, 'f', 2)
+			.arg(frame->velocity.mag(), 4, 'f', 2);
+		ui->textEdit->append(str);
+	}
 
-	double downrangeDist = (PI/2 - atan(frame->position.y()/frame->position.x())) * frame->config->body.radius;
-	ui->graph->addVertex(QPointF(downrangeDist, frame->position.mag()-frame->config->body.radius));
+	if(frame->prev != nullptr && frame->currentStage > frame->prev->currentStage)
+		ui->textEdit->append("Stage depleted");
+
+	else if(frame->prev != nullptr && frame->currentMass == frame->config->stages[frame->currentStage].dryMass
+		&& frame->currentMass < frame->prev->currentMass)
+		ui->textEdit->append("Fuel depleted");
+
+
+	ui->graph->addVertex(QPointF(frame->time, frame->position.mag()-frame->config->body.radius));
 }
 
 void MainWindow::analyseResults()

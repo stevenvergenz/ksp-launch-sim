@@ -1,6 +1,6 @@
 #include "pathgraph.h"
 
-PathGraph::PathGraph(QWidget *parent) : QWidget(parent), scale(QPoint(1,1))
+PathGraph::PathGraph(QWidget *parent) : QWidget(parent), scale(1)
 {
 	addVertex(QPointF(0.0, 0.0));
 	addVertex(QPointF(1.0, 1.0));
@@ -12,49 +12,69 @@ PathGraph::PathGraph(QWidget *parent) : QWidget(parent), scale(QPoint(1,1))
 void PathGraph::paintEvent(QPaintEvent* event)
 {
 	QPainter p(this);
-	p.setBackgroundMode(Qt::OpaqueMode);
 	p.setBackground(QBrush(Qt::white));
+	p.setBackgroundMode(Qt::OpaqueMode);
+
 	p.setRenderHint(QPainter::RenderHint::Antialiasing, true);
 
-	p.translate(2, height()-2);
+	p.translate(0, height());
 	p.scale(1,-1);
 
-	QPointF lastPoint;
-	for(auto i=vertices.begin(); i!=vertices.end(); ++i)
+	p.setPen(QPen(QBrush(Qt::black), 1, Qt::SolidLine, Qt::RoundCap));
+
+	for(int i=1; i<points.length(); ++i)
 	{
-		QPointF newPoint;
-		newPoint.setX( pow(10, scale.x()/50.0)*(*i).x() + offset.x() );
-		newPoint.setY( pow(10, scale.y()/50.0)*(*i).y() + offset.y() );
-
-		p.setPen(QPen(QBrush(Qt::black), 3, Qt::SolidLine, Qt::RoundCap));
-		p.drawPoint(newPoint);
-
-		p.setPen(QPen(QBrush(Qt::black), 1, Qt::SolidLine, Qt::RoundCap));
-		p.drawLine(lastPoint,newPoint);
-		lastPoint = newPoint;
+		p.drawLine(points[i-1], points[i]);
 	}
 }
 
 void PathGraph::addVertex(QPointF point)
 {
 	vertices.push_back(point);
+
+	QPointF newPoint;
+	newPoint.setX( pow(10, scale/50.0) * point.x() );
+	newPoint.setY( pow(10, scale/50.0) * point.y() );
+	points.push_back(newPoint);
+
+	if(newPoint.x() > max.x())
+		max.setX(newPoint.x());
+	if(newPoint.y() > max.y())
+		max.setY(newPoint.y());
+
+	resize((int)ceil(max.x()), (int)ceil(max.y()));
 	update();
 }
 
 void PathGraph::clear()
 {
 	vertices.clear();
-}
-
-void PathGraph::setHorizontalScale(int scale)
-{
-	this->scale.setX(scale);
+	points.clear();
 	update();
 }
 
-void PathGraph::setVerticalScale(int scale)
+void PathGraph::setScale(int scale)
 {
-	this->scale.setY(scale);
+	this->scale = scale;
+
+	points.clear();
+	max = QPointF();
+
+	for(int i=0; i<vertices.length(); i++)
+	{
+		QPointF newPoint;
+		newPoint.setX( pow(10, scale/50.0) * vertices[i].x() );
+		newPoint.setY( pow(10, scale/50.0) * vertices[i].y() );
+		points.push_back(newPoint);
+
+		if(newPoint.x() > max.x())
+			max.setX(newPoint.x());
+		if(newPoint.y() > max.y())
+			max.setY(newPoint.y());
+	}
+
+	resize((int)ceil(max.x()), (int)ceil(max.y()));
+
 	update();
 }
 

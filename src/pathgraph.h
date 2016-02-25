@@ -6,7 +6,9 @@
 #include <QList>
 #include <QPointF>
 #include <QPainter>
+#include <QPaintEvent>
 #include <cmath>
+#include <cstdio>
 
 class PathGraph : public QWidget
 {
@@ -19,14 +21,15 @@ public:
 signals:
 
 public slots:
-	void setHorizontalScale(int scale);
-	void setVerticalScale(int scale);
+	void setScale(int scale);
 	void setHorizontalOffset(int offset);
 	void setVerticalOffset(int offset);
 
 protected:
 	QList<QPointF> vertices;
-	QPoint scale;
+	QList<QPointF> points;
+	QPointF max;
+	int scale;
 	QPoint offset;
 	void paintEvent(QPaintEvent* event);
 };
