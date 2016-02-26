@@ -8,6 +8,9 @@
 #include <QDateTime>
 #include <cmath>
 
+#include "glm/glm.hpp"
+#include "glm/vec2.hpp"
+
 #include "configs.h"
 #include "simulator.h"
 

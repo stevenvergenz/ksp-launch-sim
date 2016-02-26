@@ -42,8 +42,8 @@ void MainWindow::log(const SimFrame * frame)
 		QString str = QString("[%1] [%2] %3m altitude at %4m/s")
 			.arg(QDateTime::currentDateTime().toString("hh:mm"))
 			.arg(frame->time, 4, 'f', 2)
-			.arg(frame->position.mag() - frame->config->body.radius, 4, 'f', 2)
-			.arg(frame->velocity.mag(), 4, 'f', 2);
+			.arg(glm::length(frame->position) - frame->config->body.radius, 4, 'f', 2)
+			.arg(glm::length(frame->velocity), 4, 'f', 2);
 		ui->textEdit->append(str);
 	}
 
@@ -55,7 +55,7 @@ void MainWindow::log(const SimFrame * frame)
 		ui->textEdit->append("Fuel depleted");
 
 
-	ui->graph->addVertex(QPointF(frame->time, frame->position.mag()-frame->config->body.radius));
+	ui->graph->addVertex(QPointF(frame->time, glm::length(frame->position)-frame->config->body.radius));
 }
 
 void MainWindow::analyseResults()

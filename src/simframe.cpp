@@ -13,6 +13,7 @@ double SimFrame::deltaV()
 
 double SimFrame::apoapsis()
 {
+	//double angularMomentum =
 	return 0.0;
 }
 

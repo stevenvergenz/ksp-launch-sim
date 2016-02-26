@@ -4,7 +4,8 @@
 #include <cmath>
 
 #include "configs.h"
-#include "vec2.h"
+#include "glm/glm.hpp"
+#include "glm/vec2.hpp"
 
 class SimFrame
 {
@@ -19,9 +20,9 @@ public:
 
 	int currentStage;
 	double currentMass;
-	Vec2 position;
-	Vec2 velocity;
-	Vec2 orientation;
+	glm::dvec2 position;
+	glm::dvec2 velocity;
+	glm::dvec2 orientation;
 
 	SimFrame* next;
 	SimFrame* prev;

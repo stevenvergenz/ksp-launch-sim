@@ -5,9 +5,10 @@
 #include <QRunnable>
 #include <cmath>
 #include <cstdio>
+#include "glm/glm.hpp"
+#include "glm/vec2.hpp"
 
 #include "configs.h"
-#include "vec2.h"
 #include "simframe.h"
 
 

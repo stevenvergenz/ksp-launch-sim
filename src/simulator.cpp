@@ -32,9 +32,9 @@ void Simulator::run()
 	SimFrame* prevFrame = new SimFrame();
 	prevFrame->config = config;
 	prevFrame->time = 0.0;
-	prevFrame->orientation = Vec2(0, 1.0).normalized();
-	prevFrame->position = Vec2(0.0, config->body.radius);
-	prevFrame->velocity = Vec2(config->body.revolutionSpeed, 0.0);
+	prevFrame->orientation = glm::normalize(glm::dvec2(0, 1.0));
+	prevFrame->position = glm::dvec2(0.0, config->body.radius);
+	prevFrame->velocity = glm::dvec2(config->body.revolutionSpeed, 0.0);
 	prevFrame->currentStage = 0;
 	prevFrame->currentMass = config->stages[0].totalMass;
 
@@ -64,7 +64,7 @@ void Simulator::run()
 		double engineThrust = 1000.0 * config->stages[curFrame->currentStage].maxThrust;
 
 		// compute thrust, update fuel status
-		Vec2 thrustAccel;
+		glm::dvec2 thrustAccel;
 		double fuelNeeded = engineThrust / (9.82*config->stages[curFrame->currentStage].Isp) * dt;
 		//printf("Fuel needed: %lf\n", fuelNeeded);
 
@@ -106,8 +106,8 @@ void Simulator::run()
 		//printf("Thrust accel: %lf %lf\n", thrustAccel.x(), thrustAccel.y());
 
 		// compute gravitational force
-		double accel = config->body.surfaceGravity * pow(config->body.radius/prevFrame->position.mag(), 2);
-		Vec2 g = accel * dt * -prevFrame->position.normalized();
+		double accel = config->body.surfaceGravity * pow(config->body.radius/glm::length(prevFrame->position), 2);
+		glm::dvec2 g = accel * dt * -glm::normalize(prevFrame->position);
 
 		// apply forces
 		curFrame->velocity = (g+thrustAccel)*dt + prevFrame->velocity;
@@ -123,7 +123,7 @@ void Simulator::run()
 		// Let the event listener handle that
 	}
 	// while rocket is above the ground and the sim hasn't timed out
-	while(prevFrame->position.mag() > config->body.radius && prevFrame->time < config->params.duration);
+	while(glm::length(prevFrame->position) > config->body.radius && prevFrame->time < config->params.duration);
 
 	emit done();
 }

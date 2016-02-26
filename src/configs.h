@@ -1,7 +1,6 @@
 #ifndef CONFIGS
 #define CONFIGS
 
-#include "vec2.h"
 
 struct SimulationConfig
 {
