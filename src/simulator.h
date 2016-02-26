@@ -5,6 +5,9 @@
 #include <QRunnable>
 #include <cmath>
 #include <cstdio>
+
+#define PI 3.141592653589
+
 #include "glm/glm.hpp"
 #include "glm/vec2.hpp"
 

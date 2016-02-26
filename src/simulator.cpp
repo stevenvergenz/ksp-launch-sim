@@ -66,13 +66,11 @@ void Simulator::run()
 		// compute thrust, update fuel status
 		glm::dvec2 thrustAccel;
 		double fuelNeeded = engineThrust / (9.82*config->stages[curFrame->currentStage].Isp) * dt;
-		//printf("Fuel needed: %lf\n", fuelNeeded);
 
 		// have fuel
 		if(fuelNeeded < prevFrame->currentMass - config->stages[curFrame->currentStage].dryMass)
 		{
-			//printf("Fuel OK\n");
-			thrustAccel = engineThrust / prevFrame->currentMass * dt * curFrame->orientation;
+			thrustAccel = engineThrust / prevFrame->currentMass * curFrame->orientation;
 			curFrame->currentMass = prevFrame->currentMass - fuelNeeded;
 		}
 		// out of fuel
@@ -83,35 +81,34 @@ void Simulator::run()
 				(prevFrame->currentMass - config->stages[curFrame->currentStage].dryMass)
 				* 9.82 * config->stages[curFrame->currentStage].Isp
 				/ engineThrust;
-			double stageAccel = engineThrust/prevFrame->currentMass * oldStageDuration;
+			double stageAccel = engineThrust/prevFrame->currentMass * oldStageDuration/dt;
 			curFrame->currentMass = config->stages[curFrame->currentStage].dryMass;
-
-			/*if(oldStageDuration == 0)
-				printf("Fuel depleted\n");
-			else
-				printf("Fuel depleting\n");*/
 
 			// change stages if available, and keep burning
 			if(curFrame->currentStage < config->stageCount-1)
 			{
 				curFrame->currentStage++;
 				engineThrust = 1000.0 * config->stages[curFrame->currentStage].maxThrust;
-				stageAccel += engineThrust / config->stages[curFrame->currentStage].totalMass * (dt - oldStageDuration);
+				stageAccel += engineThrust / config->stages[curFrame->currentStage].totalMass * (dt - oldStageDuration)/dt;
 				curFrame->currentMass = config->stages[curFrame->currentStage].totalMass -
 					engineThrust / (9.82*config->stages[curFrame->currentStage].Isp) * (dt - oldStageDuration);
 			}
 
 			thrustAccel = stageAccel * curFrame->orientation;
 		}
-		//printf("Thrust accel: %lf %lf\n", thrustAccel.x(), thrustAccel.y());
+		//printf("Thrust accel: %lf %lf\n", thrustAccel.x, thrustAccel.y);
 
-		// compute gravitational force
-		double accel = config->body.surfaceGravity * pow(config->body.radius/glm::length(prevFrame->position), 2);
-		glm::dvec2 g = accel * dt * -glm::normalize(prevFrame->position);
+		// compute drag (estimate)
+		glm::dvec2 rotationDirection = glm::normalize(glm::dvec2(prevFrame->position.y, -prevFrame->position.x));
+		glm::dvec2 airspeed = prevFrame->velocity - 2*PI*glm::length(prevFrame->position)/config->body.rotationalPeriod * rotationDirection;
+		glm::dvec2 drag = 0.0001 * pow( glm::length(airspeed), 2.0) * -glm::normalize(prevFrame->velocity);
+
+		// compute gravitational acceleration
+		glm::dvec2 g = G * config->body.mass / pow(glm::length(prevFrame->position), 2) * -glm::normalize(prevFrame->position);
 
 		// apply forces
-		curFrame->velocity = (g+thrustAccel)*dt + prevFrame->velocity;
-		curFrame->position = 0.5*(g+thrustAccel)*pow(dt,2) + prevFrame->velocity*dt + prevFrame->position;
+		curFrame->velocity = (g+thrustAccel+drag)*dt + prevFrame->velocity;
+		curFrame->position = 0.5*(g+thrustAccel+drag)*pow(dt,2) + prevFrame->velocity*dt + prevFrame->position;
 
 		// post update
 		emit update(curFrame);
