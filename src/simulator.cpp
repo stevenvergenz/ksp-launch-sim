@@ -32,9 +32,9 @@ void Simulator::run()
 	SimFrame* prevFrame = new SimFrame();
 	prevFrame->config = config;
 	prevFrame->time = 0.0;
-	prevFrame->orientation = glm::normalize(glm::dvec2(0, 1.0));
+	prevFrame->orientation = glm::normalize(glm::dvec2(0.0, 1.0));
 	prevFrame->position = glm::dvec2(0.0, config->body.radius);
-	prevFrame->velocity = glm::dvec2(config->body.revolutionSpeed, 0.0);
+	prevFrame->velocity = glm::dvec2(2*PI*config->body.radius/config->body.rotationalPeriod, 0.0);
 	prevFrame->currentStage = 0;
 	prevFrame->currentMass = config->stages[0].totalMass;
 

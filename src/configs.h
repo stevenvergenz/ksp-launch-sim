@@ -23,9 +23,9 @@ struct SimulationConfig
 
 	struct BodyInfo
 	{
-		double surfaceGravity; // m/s2
+		double mass; // kg
 		double radius; // m
-		double revolutionSpeed; // m/s at surface
+		double rotationalPeriod; // s
 	} body;
 
 	struct GoalInfo

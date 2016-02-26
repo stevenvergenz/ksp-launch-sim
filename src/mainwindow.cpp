@@ -12,9 +12,9 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(ui->btnStart, SIGNAL(clicked(bool)), this, SLOT(startSim()));
 	connect(ui->verticalScale, SIGNAL(valueChanged(int)), ui->graph, SLOT(setScale(int)));
 
-	config->stages[0] = SimulationConfig::StageInfo(1950.0, 3000.0, 192.0, 165.0);
-	config->stages[1] = SimulationConfig::StageInfo(450.0, 1500.0, 192.0, 165.0);
-	config->stageCount = 2;
+	config->stages[0] = SimulationConfig::StageInfo(940.0+450.0, 940.0+1500.0, 162.91, 140.0);
+	//config->stages[1] = SimulationConfig::StageInfo(450.0, 1500.0, 192.0, 165.0);
+	config->stageCount = 1;
 	config->body = KerbolSystem::Kerbin;
 	config->params.duration = 1000.0;
 	config->params.timeResolution = 0.1;
@@ -35,24 +35,40 @@ void MainWindow::startSim()
 
 void MainWindow::log(const SimFrame * frame)
 {
-	static double lastReportTime = 0.0;
-	if(frame->time > lastReportTime)
-	{
-		lastReportTime = frame->time;
-		QString str = QString("[%1] [%2] %3m altitude at %4m/s")
-			.arg(QDateTime::currentDateTime().toString("hh:mm"))
-			.arg(frame->time, 4, 'f', 2)
-			.arg(glm::length(frame->position) - frame->config->body.radius, 4, 'f', 2)
-			.arg(glm::length(frame->velocity), 4, 'f', 2);
-		ui->textEdit->append(str);
-	}
+	QString timestamp = QString("[%1] ").arg(QDateTime::currentDateTime().toString("hh:mm"));
 
 	if(frame->prev != nullptr && frame->currentStage > frame->prev->currentStage)
-		ui->textEdit->append("Stage depleted");
+	{
+		auto orbit = frame->orbit();
+		QString str = QString("Stage depleted, apogee = %1, perigee = %2")
+			.arg(orbit.x - frame->config->body.radius)
+			.arg(orbit.y - frame->config->body.radius);
+
+		ui->textEdit->append(timestamp + str);
+	}
 
 	else if(frame->prev != nullptr && frame->currentMass == frame->config->stages[frame->currentStage].dryMass
 		&& frame->currentMass < frame->prev->currentMass)
-		ui->textEdit->append("Fuel depleted");
+	{
+		auto orbit = frame->orbit();
+		QString str = QString("Fuel depleted, apogee = %1, perigee = %2")
+			.arg(orbit.x - frame->config->body.radius)
+			.arg(orbit.y - frame->config->body.radius);
+		ui->textEdit->append(timestamp + str);
+	}
+
+	static double lastReportTime = 0.0;
+
+	if(frame->time == 0.0 || frame->time > lastReportTime + 1.0)
+	{
+		lastReportTime += 1.0;
+		QString str = QString("[%2] %3m altitude at %4m/s")
+			.arg(frame->time, 4, 'f', 2)
+			.arg(glm::length(frame->position) - frame->config->body.radius, 4, 'f', 2)
+			.arg(glm::length(frame->velocity), 4, 'f', 2);
+		ui->textEdit->append(timestamp + str);
+	}
+
 
 
 	ui->graph->addVertex(QPointF(frame->time, glm::length(frame->position)-frame->config->body.radius));

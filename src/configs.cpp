@@ -3,9 +3,9 @@
 namespace KerbolSystem
 {
 	SimulationConfig::BodyInfo Kerbin = {
-		9.81, // gravity
+		5.2915793e22, // mass
 		600000, // radius
-		174.94 // rotational velocity
+		21549.425 // sidereal rotation period
 	};
 }
 

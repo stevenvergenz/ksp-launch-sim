@@ -6,14 +6,16 @@
 #include "configs.h"
 #include "glm/glm.hpp"
 #include "glm/vec2.hpp"
+#include "glm/vec3.hpp"
+
+#define G 6.67408e-11
 
 class SimFrame
 {
 public:
 	SimFrame();
-	double deltaV();
-	double apoapsis();
-	double periapsis();
+	double deltaV() const;
+	glm::dvec2 orbit() const;
 
 	SimulationConfig* config;
 	double time;
