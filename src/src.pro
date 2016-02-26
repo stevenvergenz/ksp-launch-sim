@@ -18,12 +18,15 @@ SOURCES += main.cpp\
     simulator.cpp \
     configs.cpp \
     pathgraph.cpp \
-	simframe.cpp
+	simframe.cpp \
+    pathgraphviewer.cpp
 
 HEADERS  += mainwindow.h \
     simulator.h \
     configs.h \
     pathgraph.h \
-	simframe.h
+	simframe.h \
+    pathgraphviewer.h
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    pathgraphviewer.ui

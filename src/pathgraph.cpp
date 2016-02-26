@@ -1,91 +1,77 @@
 #include "pathgraph.h"
 
-PathGraph::PathGraph(QWidget *parent) : QWidget(parent), scale(1)
+PathGraph::PathGraph(QWidget *parent) : QWidget(parent)
 {
-	addVertex(QPointF(0.0, 0.0));
-	addVertex(QPointF(1.0, 1.0));
-	addVertex(QPointF(4.0, 2.0));
-	addVertex(QPointF(9.0, 3.0));
-	addVertex(QPointF(16.0, 4.0));
+
 }
 
 void PathGraph::paintEvent(QPaintEvent* event)
 {
 	QPainter p(this);
-	p.setBackground(QBrush(Qt::white));
-	p.setBackgroundMode(Qt::OpaqueMode);
-
 	p.setRenderHint(QPainter::RenderHint::Antialiasing, true);
 
-	p.translate(0, height());
-	p.scale(1,-1);
+	// draw background
+	p.setBrush(Qt::white);
+	p.drawRect(0, 0, width(), height());
 
-	p.setPen(QPen(QBrush(Qt::black), 1, Qt::SolidLine, Qt::RoundCap));
+	// draw world
+	p.setPen(Qt::darkGreen);
+	p.setBrush(Qt::transparent);
+	QRectF world(-6e5, -6e5, 1.2e6, 1.2e6);
+	world = view.mapRect(world);
+	//printf("world: %lf %lf %lf %lf\n", world.left(), world.top(), world.width(), world.height());
+	p.drawEllipse(world);
 
-	for(int i=1; i<points.length(); ++i)
+	p.setPen(Qt::black);
+	p.drawLine(view.map(QPoint(-1000000,1000000)), view.map(QPoint(1000000,-1000000)));
+	p.drawLine(view.map(QPoint(-1000000,0)), view.map(QPoint(1000000,0)));
+	p.drawLine(view.map(QPoint(0,-1000000)), view.map(QPoint(0,1000000)));
+
+	auto positions = *(this->positions);
+	for(int i=1; i<positions.length(); ++i)
 	{
-		p.drawLine(points[i-1], points[i]);
-	}
-}
-
-void PathGraph::addVertex(QPointF point)
-{
-	vertices.push_back(point);
-
-	QPointF newPoint;
-	newPoint.setX( pow(10, scale/50.0) * point.x() );
-	newPoint.setY( pow(10, scale/50.0) * point.y() );
-	points.push_back(newPoint);
-
-	if(newPoint.x() > max.x())
-		max.setX(newPoint.x());
-	if(newPoint.y() > max.y())
-		max.setY(newPoint.y());
-
-	resize((int)ceil(max.x()), (int)ceil(max.y()));
-	update();
-}
-
-void PathGraph::clear()
-{
-	vertices.clear();
-	points.clear();
-	update();
-}
-
-void PathGraph::setScale(int scale)
-{
-	this->scale = scale;
-
-	points.clear();
-	max = QPointF();
-
-	for(int i=0; i<vertices.length(); i++)
-	{
-		QPointF newPoint;
-		newPoint.setX( pow(10, scale/50.0) * vertices[i].x() );
-		newPoint.setY( pow(10, scale/50.0) * vertices[i].y() );
-		points.push_back(newPoint);
-
-		if(newPoint.x() > max.x())
-			max.setX(newPoint.x());
-		if(newPoint.y() > max.y())
-			max.setY(newPoint.y());
+		p.drawLine( view.map(QLineF(positions[i-1], positions[i])) );
 	}
 
-	resize((int)ceil(max.x()), (int)ceil(max.y()));
-
-	update();
+	// draw background
+	p.setPen(Qt::gray);
+	p.drawRect(0, 0, width(), height());
 }
 
-void PathGraph::setHorizontalOffset(int offset)
+void PathGraph::setViewWindow(QRectF viewBox, bool update)
 {
-	this->offset.setX(offset);
-	update();
+	this->viewBox = viewBox;
+
+	// clear old transform
+	view.reset();
+
+	// calculate new scale
+	int scale;
+	if(width() < height()){
+		scale = round(viewBox.width()*1.2 / (width()-2));
+	}
+	else {
+		scale = round(viewBox.height()*1.2 / (height()-2));
+	}
+	if(scale < 1) scale = 1;
+
+
+	//printf("viewBox: %lf %lf %lf %lf\n", viewBox.left(), viewBox.top(), viewBox.width(), viewBox.height());
+	//printf("viewBox center: %lf %lf\n", viewBox.center().x(), viewBox.center().y());
+	view = view.scale(1.0/scale, -1.0/scale);
+	view.translate(scale*width()/2 + viewBox.center().x(), -scale*height()/2 - viewBox.center().y());
+
+	emit viewUpdated(viewBox.toAlignedRect(), scale);
+
+	if(update)
+		this->update();
 }
 
-void PathGraph::setVerticalOffset(int offset)
+void PathGraph::resizeEvent(QResizeEvent *event){
+	setViewWindow(viewBox, false);
+}
+
+void PathGraph::setPositionList(const QList<QPointF> * const list)
 {
-	this->offset.setY(offset);
-	update();
+	positions = list;
 }

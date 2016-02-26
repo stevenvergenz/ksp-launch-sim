@@ -10,10 +10,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->setupUi(this);
 
 	connect(ui->btnStart, SIGNAL(clicked(bool)), this, SLOT(startSim()));
-	connect(ui->verticalScale, SIGNAL(valueChanged(int)), ui->graph, SLOT(setScale(int)));
 
 	config->stages[0] = SimulationConfig::StageInfo(940.0+450.0, 940.0+1500.0, 162.91, 140.0);
-	//config->stages[1] = SimulationConfig::StageInfo(450.0, 1500.0, 192.0, 165.0);
 	config->stageCount = 1;
 	config->body = KerbolSystem::Kerbin;
 	config->params.duration = 1000.0;
@@ -22,7 +20,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 void MainWindow::startSim()
 {
-	ui->graph->clear();
+	ui->pathViewer->clear();
 	sim = new Simulator(config);
 
 	// connect slots
@@ -40,7 +38,7 @@ void MainWindow::log(const SimFrame * frame)
 	if(frame->prev != nullptr && frame->currentStage > frame->prev->currentStage)
 	{
 		auto orbit = frame->orbit();
-		QString str = QString("Stage depleted, apogee = %1, perigee = %2")
+		QString str = QString("Stage depleted, apoapsis = %1, periapsis = %2")
 			.arg(orbit.x - frame->config->body.radius)
 			.arg(orbit.y - frame->config->body.radius);
 
@@ -51,7 +49,7 @@ void MainWindow::log(const SimFrame * frame)
 		&& frame->currentMass < frame->prev->currentMass)
 	{
 		auto orbit = frame->orbit();
-		QString str = QString("Fuel depleted, apogee = %1, perigee = %2")
+		QString str = QString("Fuel depleted, apoapsis = %1, periapsis = %2")
 			.arg(orbit.x - frame->config->body.radius)
 			.arg(orbit.y - frame->config->body.radius);
 		ui->textEdit->append(timestamp + str);
@@ -71,7 +69,7 @@ void MainWindow::log(const SimFrame * frame)
 
 
 
-	ui->graph->addVertex(QPointF(frame->time, glm::length(frame->position)-frame->config->body.radius));
+	ui->pathViewer->addVertex(QPointF(frame->position.x, frame->position.y));
 }
 
 void MainWindow::analyseResults()

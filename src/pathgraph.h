@@ -7,6 +7,8 @@
 #include <QPointF>
 #include <QPainter>
 #include <QPaintEvent>
+#include <QTransform>
+
 #include <cmath>
 #include <cstdio>
 
@@ -15,23 +17,20 @@ class PathGraph : public QWidget
 	Q_OBJECT
 public:
 	explicit PathGraph(QWidget *parent = 0);
-	void addVertex(QPointF point);
-	void clear();
+	void setPositionList(const QList<QPointF>* const list);
 
 signals:
+	void viewUpdated(QRect scrollArea, int scale);
 
 public slots:
-	void setScale(int scale);
-	void setHorizontalOffset(int offset);
-	void setVerticalOffset(int offset);
+	void setViewWindow(QRectF view, bool update = true);
 
 protected:
-	QList<QPointF> vertices;
-	QList<QPointF> points;
-	QPointF max;
-	int scale;
-	QPoint offset;
+	const QList<QPointF>* positions;
+	QRectF viewBox;
+	QTransform view;
 	void paintEvent(QPaintEvent* event);
+	void resizeEvent(QResizeEvent* event);
 };
 
 #endif // PATHGRAPH_H
