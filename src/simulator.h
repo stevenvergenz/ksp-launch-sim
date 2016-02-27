@@ -7,6 +7,8 @@
 #include <cstdio>
 
 #define PI 3.141592653589
+#define E 2.71828183
+#define R_CONST 287.053
 
 #include "glm/glm.hpp"
 #include "glm/vec2.hpp"
@@ -24,7 +26,6 @@ public:
 	~Simulator();
 
 	void run();
-	const SimFrame* getLastFlightData();
 
 signals:
 	void start(const SimFrame* initFrame);
@@ -36,6 +37,8 @@ public slots:
 private:
 	SimulationConfig* config;
 	SimFrame* lastFlight;
+
+	double tempFromHeight(double height);
 };
 
 #endif // SIMULATOR_H

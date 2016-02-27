@@ -55,11 +55,10 @@ void PathGraph::setViewWindow(QRectF viewBox, bool update)
 	}
 	if(scale < 1) scale = 1;
 
-
-	//printf("viewBox: %lf %lf %lf %lf\n", viewBox.left(), viewBox.top(), viewBox.width(), viewBox.height());
+	//printf("viewBox: %lf %lf %lf %lf\n", viewBox.left(), viewBox.right(), viewBox.top(), viewBox.bottom());
 	//printf("viewBox center: %lf %lf\n", viewBox.center().x(), viewBox.center().y());
 	view = view.scale(1.0/scale, -1.0/scale);
-	view.translate(scale*width()/2 + viewBox.center().x(), -scale*height()/2 - viewBox.center().y());
+	view.translate(scale*width()/2 - viewBox.center().x(), -scale*height()/2 - viewBox.center().y());
 
 	emit viewUpdated(viewBox.toAlignedRect(), scale);
 
@@ -71,7 +70,6 @@ void PathGraph::resizeEvent(QResizeEvent *event){
 	setViewWindow(viewBox, false);
 }
 
-void PathGraph::setPositionList(const QList<QPointF> * const list)
-{
+void PathGraph::setPositionList(const QList<QPointF> * const list){
 	positions = list;
 }

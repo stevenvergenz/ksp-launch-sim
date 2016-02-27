@@ -12,6 +12,8 @@
 #include <cmath>
 #include <cstdio>
 
+#include "configs.h"
+
 class PathGraph : public QWidget
 {
 	Q_OBJECT
@@ -29,6 +31,7 @@ protected:
 	const QList<QPointF>* positions;
 	QRectF viewBox;
 	QTransform view;
+
 	void paintEvent(QPaintEvent* event);
 	void resizeEvent(QResizeEvent* event);
 };

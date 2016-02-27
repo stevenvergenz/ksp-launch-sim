@@ -101,7 +101,10 @@ void Simulator::run()
 		// compute drag (estimate)
 		glm::dvec2 rotationDirection = glm::normalize(glm::dvec2(prevFrame->position.y, -prevFrame->position.x));
 		glm::dvec2 airspeed = prevFrame->velocity - 2*PI*glm::length(prevFrame->position)/config->body.rotationalPeriod * rotationDirection;
-		glm::dvec2 drag = 0.0001 * pow( glm::length(airspeed), 2.0) * -glm::normalize(prevFrame->velocity);
+		double pressure = config->body.surfacePressure * pow(E, -(glm::length(prevFrame->position)-config->body.radius)/config->body.scaleHeight);
+		double density = pressure / (R_CONST * tempFromHeight(glm::length(prevFrame->position)-config->body.radius));
+		glm::dvec2 drag = 0.5 * density * pow(glm::length(airspeed), 2.0) * config->stages[curFrame->currentStage].dragCoefficient
+			* config->stages[curFrame->currentStage].crossSectionalArea / prevFrame->currentMass * -glm::normalize(prevFrame->velocity);
 
 		// compute gravitational acceleration
 		glm::dvec2 g = G * config->body.mass / pow(glm::length(prevFrame->position), 2) * -glm::normalize(prevFrame->position);
@@ -125,7 +128,22 @@ void Simulator::run()
 	emit done();
 }
 
-const SimFrame* Simulator::getLastFlightData()
+double Simulator::tempFromHeight(double height)
 {
-	return lastFlight;
+	double geoHeight = 7963.75 * height / (6371 + 1.25*height);
+
+	if(geoHeight < 10000)
+		return 290 - (75/10000)*height;
+	else if(geoHeight < 20000)
+		return 215;
+	else if(geoHeight < 46000)
+		return 215 + (55/26000)*height;
+	else if(geoHeight < 51000)
+		return 270;
+	else if(geoHeight < 71000)
+		return 270 - (55/20000)*height;
+	else if(geoHeight < 85000)
+		return 215 - (20/14000)*height;
+	else
+		return 195;
 }

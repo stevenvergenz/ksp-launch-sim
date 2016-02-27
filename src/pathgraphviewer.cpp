@@ -36,8 +36,10 @@ void PathGraphViewer::addVertex(QPointF point)
 	if(point.x() < max.x() && point.x() > min.x() && point.y() < max.y() && point.y() > min.y())
 		update = false;
 
-	if(update)
+	if(update){
+		//printf("viewWindow: %lf %lf %lf %lf\n", min.x(), max.x(),min.y(), max.y());
 		ui->widget->setViewWindow(QRectF(min.x(), min.y(), max.x()-min.x(), max.y()-min.y()));
+	}
 	else
 		ui->widget->update();
 }

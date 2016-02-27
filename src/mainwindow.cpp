@@ -11,7 +11,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	connect(ui->btnStart, SIGNAL(clicked(bool)), this, SLOT(startSim()));
 
-	config->stages[0] = SimulationConfig::StageInfo(940.0+450.0, 940.0+1500.0, 162.91, 140.0);
+	config->stages[0] = SimulationConfig::StageInfo(940.0+450.0, 940.0+1500.0, 162.91, 140.0, 1.767, 0.248);
 	config->stageCount = 1;
 	config->body = KerbolSystem::Kerbin;
 	config->params.duration = 1000.0;
@@ -66,8 +66,6 @@ void MainWindow::log(const SimFrame * frame)
 			.arg(glm::length(frame->velocity), 4, 'f', 2);
 		ui->textEdit->append(timestamp + str);
 	}
-
-
 
 	ui->pathViewer->addVertex(QPointF(frame->position.x, frame->position.y));
 }

@@ -4,6 +4,8 @@
 #include <QWidget>
 #include <QList>
 
+#include "configs.h"
+
 namespace Ui {
 class PathGraphViewer;
 }
