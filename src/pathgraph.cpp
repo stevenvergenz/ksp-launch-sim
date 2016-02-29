@@ -45,9 +45,9 @@ void PathGraph::setViewWindow(QRectF viewBox, bool update)
 	// clear old transform
 	view.reset();
 
-	// calculate new scale
+	// calculate new scale based on target ratio
 	int scale;
-	if(width() < height()){
+	if(viewBox.width()/viewBox.height() > (width()-2)/(height()-2)){
 		scale = round(viewBox.width()*1.2 / (width()-2));
 	}
 	else {
@@ -55,8 +55,6 @@ void PathGraph::setViewWindow(QRectF viewBox, bool update)
 	}
 	if(scale < 1) scale = 1;
 
-	//printf("viewBox: %lf %lf %lf %lf\n", viewBox.left(), viewBox.right(), viewBox.top(), viewBox.bottom());
-	//printf("viewBox center: %lf %lf\n", viewBox.center().x(), viewBox.center().y());
 	view = view.scale(1.0/scale, -1.0/scale);
 	view.translate(scale*width()/2 - viewBox.center().x(), -scale*height()/2 - viewBox.center().y());
 

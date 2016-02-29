@@ -27,6 +27,8 @@ public:
 
 	void run();
 
+	static SimFrame* computeNextFrame(SimFrame* prevFrame, glm::dvec2 orientation = glm::dvec2(), double throttle = 1.0);
+
 signals:
 	void start(const SimFrame* initFrame);
 	void update(const SimFrame* updateFrame);
@@ -38,7 +40,7 @@ private:
 	SimulationConfig* config;
 	SimFrame* lastFlight;
 
-	double tempFromHeight(double height);
+	static double tempFromHeight(double height);
 };
 
 #endif // SIMULATOR_H
