@@ -18,5 +18,7 @@ glm::dvec2 SimFrame::orbit() const
 	double param = pow(angularMomentum, 2) / mu;
 	double energy = pow(glm::length(velocity),2) / 2 - mu/glm::length(position);
 	double eccentricity = sqrt( 1 + 2*energy*pow(angularMomentum,2) / pow(mu,2) );
+
+	// {x: apoapsis, y: periapsis}
 	return glm::dvec2(param / (1-eccentricity), param / (1+eccentricity));
 }

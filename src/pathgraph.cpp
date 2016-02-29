@@ -46,13 +46,9 @@ void PathGraph::setViewWindow(QRectF viewBox, bool update)
 	view.reset();
 
 	// calculate new scale based on target ratio
-	int scale;
-	if(viewBox.width()/viewBox.height() > (width()-2)/(height()-2)){
-		scale = round(viewBox.width()*1.2 / (width()-2));
-	}
-	else {
-		scale = round(viewBox.height()*1.2 / (height()-2));
-	}
+	int scaleX = round(viewBox.width()*1.2 / (width()-2));
+	int scaleY = round(viewBox.height()*1.2 / (height()-2));
+	int scale = scaleX > scaleY ? scaleX : scaleY;
 	if(scale < 1) scale = 1;
 
 	view = view.scale(1.0/scale, -1.0/scale);

@@ -1,8 +1,6 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#define PI 3.141592653589
-
 #include <QMainWindow>
 #include <QThreadPool>
 #include <QDateTime>

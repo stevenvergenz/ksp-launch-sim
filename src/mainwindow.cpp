@@ -11,11 +11,20 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	connect(ui->btnStart, SIGNAL(clicked(bool)), this, SLOT(startSim()));
 
-	config->stages[0] = SimulationConfig::StageInfo(940.0+450.0, 940.0+1500.0, 162.91, 140.0, 1.767, 0.248);
+	config->stages[0] = SimulationConfig::StageInfo(
+		940.0+1000.0, // dry mass
+		940.0+5000.0, // total mass
+		300.0, // thrust
+		1000.0, // Isp
+		1.767, // cross-sectional area
+		0.248  // drag coefficient
+	);
 	config->stageCount = 1;
 	config->body = KerbolSystem::Kerbin;
 	config->params.duration = 1000.0;
 	config->params.timeResolution = 0.1;
+	config->goal.desiredApoapsis = 100000;
+	config->goal.desiredPeriapsis = 100000;
 }
 
 void MainWindow::startSim()
@@ -35,39 +44,29 @@ void MainWindow::log(const SimFrame * frame)
 {
 	QString timestamp = QString("[%1] ").arg(QDateTime::currentDateTime().toString("hh:mm"));
 
-	if(frame->prev != nullptr && frame->currentStage > frame->prev->currentStage)
-	{
-		auto orbit = frame->orbit();
-		QString str = QString("Stage depleted, apoapsis = %1, periapsis = %2")
-			.arg(orbit.x - frame->config->body.radius)
-			.arg(orbit.y - frame->config->body.radius);
-
-		ui->textEdit->append(timestamp + str);
-	}
-
-	else if(frame->prev != nullptr && frame->currentMass == frame->config->stages[frame->currentStage].dryMass
-		&& frame->currentMass < frame->prev->currentMass)
-	{
-		auto orbit = frame->orbit();
-		QString str = QString("Fuel depleted, apoapsis = %1, periapsis = %2")
-			.arg(orbit.x - frame->config->body.radius)
-			.arg(orbit.y - frame->config->body.radius);
-		ui->textEdit->append(timestamp + str);
-	}
-
 	static double lastReportTime = 0.0;
 
-	if(frame->time == 0.0 || frame->time > lastReportTime + 1.0)
+	if(frame->time == 0.0 || frame->time > lastReportTime + 0.0)
 	{
 		lastReportTime += 1.0;
-		QString str = QString("[%2] %3m altitude at %4m/s")
+		double angle = acos( glm::dot(frame->orientation, glm::dvec2(frame->position.y, -frame->position.x))
+			/ glm::length(frame->position) ) * 180/PI;
+
+		QString str = QString("[%2] %3m | %4m/s | %5° | %6m/s ∆v")
 			.arg(frame->time, 4, 'f', 2)
 			.arg(glm::length(frame->position) - frame->config->body.radius, 4, 'f', 2)
-			.arg(glm::length(frame->velocity), 4, 'f', 2);
+			.arg(glm::length(frame->velocity), 4, 'f', 2)
+			.arg(angle, 2, 'f', 0)
+			.arg(frame->deltaV(), 2, 'f', 2);
 		ui->textEdit->append(timestamp + str);
+
+		ui->statusBar->showMessage(QString("%1 apoapsis, %2 periapsis")
+			.arg(frame->orbit().x).arg(frame->orbit().y)
+		);
+
+		ui->pathViewer->addVertex(QPointF(frame->position.x, frame->position.y));
 	}
 
-	ui->pathViewer->addVertex(QPointF(frame->position.x, frame->position.y));
 }
 
 void MainWindow::analyseResults()

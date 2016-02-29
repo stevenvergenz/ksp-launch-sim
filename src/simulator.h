@@ -15,6 +15,7 @@
 
 #include "configs.h"
 #include "simframe.h"
+#include "pilot.h"
 
 
 class Simulator : public QObject, public QRunnable

@@ -32,18 +32,22 @@ void Simulator::run()
 	SimFrame* prevFrame = new SimFrame();
 	prevFrame->config = config;
 	prevFrame->time = 0.0;
-	prevFrame->orientation = glm::normalize(glm::dvec2(1.0, 1.0));
+	prevFrame->orientation = glm::normalize(glm::dvec2(0.0, 1.0));
 	prevFrame->position = glm::dvec2(0.0, config->body.radius);
 	prevFrame->velocity = glm::dvec2(2*PI*config->body.radius/config->body.rotationalPeriod, 0.0);
 	prevFrame->currentStage = 0;
 	prevFrame->currentMass = config->stages[0].totalMass;
+
+	// set up pilot
+	OrbitalPilot pilot(0, PI/12, 0.25);
 
 	emit start(prevFrame);
 
 	// start simulation loop
 	do
 	{
-		SimFrame* curFrame = computeNextFrame(prevFrame);
+		auto action = pilot.getCourse(prevFrame);
+		SimFrame* curFrame = computeNextFrame(prevFrame, action.orientation, action.throttle);
 		prevFrame->next = curFrame;
 
 		// post update
@@ -118,7 +122,8 @@ SimFrame* Simulator::computeNextFrame(SimFrame *prevFrame, glm::dvec2 orientatio
 	glm::dvec2 rotationDirection = glm::normalize(glm::dvec2(prevFrame->position.y, -prevFrame->position.x));
 	glm::dvec2 airspeed = prevFrame->velocity - 2*PI*glm::length(prevFrame->position)/config->body.rotationalPeriod * rotationDirection;
 	double pressure = config->body.surfacePressure * pow(E, -(glm::length(prevFrame->position)-config->body.radius)/config->body.scaleHeight);
-	if(pressure <= 0.000001*config->body.surfacePressure) pressure = 0;
+	if(pressure <= 0.000001*config->body.surfacePressure)
+		pressure = 0;
 	double density = pressure / (R_CONST * tempFromHeight(glm::length(prevFrame->position)-config->body.radius));
 	glm::dvec2 drag = 0.5 * density * pow(glm::length(airspeed), 2.0) * config->stages[curFrame->currentStage].dragCoefficient
 		* config->stages[curFrame->currentStage].crossSectionalArea / prevFrame->currentMass * -glm::normalize(prevFrame->velocity);
