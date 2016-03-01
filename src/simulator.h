@@ -26,6 +26,7 @@ public:
 	bool abort;
 
 	void run();
+	void oldRun();
 
 	static SimFrame* computeNextFrame(SimFrame* prevFrame, glm::dvec2 orientation = glm::dvec2(), double throttle = 1.0);
 

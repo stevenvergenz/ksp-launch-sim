@@ -20,6 +20,11 @@ Simulator::~Simulator()
 
 void Simulator::run()
 {
+	oldRun();
+}
+
+void Simulator::oldRun()
+{
 	// clean up last flight
 	SimFrame* i = lastFlight;
 	while(i != nullptr){
@@ -31,12 +36,15 @@ void Simulator::run()
 	// set up initial state
 	SimFrame* prevFrame = new SimFrame();
 	prevFrame->config = config;
-	prevFrame->time = 0.0;
-	prevFrame->orientation = glm::normalize(glm::dvec2(0.0, 1.0));
-	prevFrame->position = glm::dvec2(0.0, config->body.radius);
-	prevFrame->velocity = glm::dvec2(2*PI*config->body.radius/config->body.rotationalPeriod, 0.0);
 	prevFrame->currentStage = 0;
 	prevFrame->currentMass = config->stages[0].totalMass;
+
+	prevFrame->time = 0.0;
+	prevFrame->orientation = glm::normalize(glm::dvec2(0.0, 1.0));
+	prevFrame->throttle = 1.0;
+
+	prevFrame->position = glm::dvec2(0.0, config->body.radius);
+	prevFrame->velocity = glm::dvec2(2*PI*config->body.radius/config->body.rotationalPeriod, 0.0);
 
 	// set up pilot
 	Pilot* pilot = (Pilot*) new OrbitalPilot();
@@ -48,7 +56,6 @@ void Simulator::run()
 	{
 		auto action = pilot->getCourse(prevFrame);
 		SimFrame* curFrame = computeNextFrame(prevFrame, action.orientation, action.throttle);
-		prevFrame->next = curFrame;
 
 		//printf("change in dV at %.2lf: %lf\n", glm::length(prevFrame->position), prevFrame->deltaV() - curFrame->deltaV());
 

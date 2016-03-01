@@ -23,9 +23,11 @@ public:
 	double currentMass;
 	glm::dvec2 position;
 	glm::dvec2 velocity;
-	glm::dvec2 orientation;
 
-	SimFrame* next;
+	glm::dvec2 orientation;
+	double throttle;
+
+	double score;
 	SimFrame* prev;
 };
 
