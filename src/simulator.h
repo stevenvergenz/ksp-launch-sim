@@ -6,9 +6,6 @@
 #include <cmath>
 #include <cstdio>
 
-#define PI 3.141592653589
-#define E 2.71828183
-#define R_CONST 287.053
 
 #include "glm/glm.hpp"
 #include "glm/vec2.hpp"
@@ -26,6 +23,8 @@ public:
 	Simulator(SimulationConfig* config);
 	~Simulator();
 
+	bool abort;
+
 	void run();
 
 	static SimFrame* computeNextFrame(SimFrame* prevFrame, glm::dvec2 orientation = glm::dvec2(), double throttle = 1.0);
@@ -35,7 +34,6 @@ signals:
 	void update(const SimFrame* updateFrame);
 	void done();
 
-public slots:
 
 private:
 	SimulationConfig* config;

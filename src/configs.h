@@ -1,22 +1,25 @@
+
+#ifndef CONSTS
+#define CONSTS
+#define PI 3.141592653589
+#define E 2.71828183
+#define R_CONST 287.053
+#define G 6.67408e-11
+#endif
+
 #ifndef CONFIGS
 #define CONFIGS
-
 
 struct SimulationConfig
 {
 	struct StageInfo
 	{
-		StageInfo()
-			: dryMass(0), totalMass(0), maxThrust(0), Isp(0)
-		{}
-		StageInfo(double dry, double total, double thrust, double Isp, double area, double drag)
-			: dryMass(dry), totalMass(total), maxThrust(thrust), Isp(Isp), crossSectionalArea(area), dragCoefficient(drag)
-		{}
-
 		double dryMass; // kg
 		double totalMass; // kg
-		double maxThrust; // kN
-		double Isp; // s
+		double maxThrustAtmo; // kN
+		double maxThrustVac; // kN
+		double IspAtmo; // s
+		double IspVac; // s
 
 		double crossSectionalArea; // m2
 		double dragCoefficient; // dimensionless
@@ -44,7 +47,11 @@ struct SimulationConfig
 	{
 		double duration; // s
 		double timeResolution; // s
+		int searchDepth;
+		double radialStep; // radians
+		double throttleStep; // (0,1)
 	} params;
+
 };
 
 

@@ -1,6 +1,6 @@
 #include "simulator.h"
 
-Simulator::Simulator(SimulationConfig* config) : config(config), lastFlight(nullptr)
+Simulator::Simulator(SimulationConfig* config) : abort(false), config(config), lastFlight(nullptr)
 {
 
 }
@@ -39,16 +39,18 @@ void Simulator::run()
 	prevFrame->currentMass = config->stages[0].totalMass;
 
 	// set up pilot
-	OrbitalPilot pilot(0, PI/12, 0.25);
+	Pilot* pilot = (Pilot*) new OrbitalPilot();
 
 	emit start(prevFrame);
 
 	// start simulation loop
 	do
 	{
-		auto action = pilot.getCourse(prevFrame);
+		auto action = pilot->getCourse(prevFrame);
 		SimFrame* curFrame = computeNextFrame(prevFrame, action.orientation, action.throttle);
 		prevFrame->next = curFrame;
+
+		//printf("change in dV at %.2lf: %lf\n", glm::length(prevFrame->position), prevFrame->deltaV() - curFrame->deltaV());
 
 		// post update
 		emit update(curFrame);
@@ -60,9 +62,12 @@ void Simulator::run()
 		// Let the event listener handle that
 	}
 	// while rocket is above the ground and the sim hasn't timed out
-	while(glm::length(prevFrame->position) > config->body.radius && prevFrame->time < config->params.duration);
+	//while(glm::length(prevFrame->position) > config->body.radius && prevFrame->time < config->params.duration);
+	while(!abort && prevFrame->time < config->params.duration && glm::length(prevFrame->position) > 10000);
 
 	emit done();
+
+	delete pilot;
 }
 
 SimFrame* Simulator::computeNextFrame(SimFrame *prevFrame, glm::dvec2 orientation, double throttle)
@@ -77,15 +82,34 @@ SimFrame* Simulator::computeNextFrame(SimFrame *prevFrame, glm::dvec2 orientatio
 	curFrame->currentStage = prevFrame->currentStage;
 	curFrame->prev = prevFrame;
 
+	// compute atmo drag (estimate)
+	glm::dvec2 rotationDirection = glm::normalize(glm::dvec2(prevFrame->position.y, -prevFrame->position.x));
+	glm::dvec2 airspeed = prevFrame->velocity - 2*PI*glm::length(prevFrame->position)/config->body.rotationalPeriod * rotationDirection;
+	double pressure = config->body.surfacePressure * pow(E, -(glm::length(prevFrame->position)-config->body.radius)/config->body.scaleHeight);
+	if(pressure <= 0.000001*config->body.surfacePressure)
+		pressure = 0;
+	else if(pressure > config->body.surfacePressure)
+		pressure = config->body.surfacePressure;
+
+	double density = pressure / (R_CONST * tempFromHeight(glm::length(prevFrame->position)-config->body.radius));
+	glm::dvec2 drag = 0.5 * density * pow(glm::length(airspeed), 2.0) * config->stages[curFrame->currentStage].dragCoefficient
+		* config->stages[curFrame->currentStage].crossSectionalArea / prevFrame->currentMass * -glm::normalize(prevFrame->velocity);
+
+	// update engine characteristics in atmo
+	double atmoThrust = (pressure/config->body.surfacePressure) * config->stages[curFrame->currentStage].maxThrustAtmo
+		+ (1 - pressure/config->body.surfacePressure) * config->stages[curFrame->currentStage].maxThrustVac;
+	double atmoIsp = (pressure/config->body.surfacePressure) * config->stages[curFrame->currentStage].IspAtmo
+		+ (1 - pressure/config->body.surfacePressure) * config->stages[curFrame->currentStage].IspVac;
+
 	// update orientation
 	curFrame->orientation = glm::length(orientation) == 1 ? orientation : prevFrame->orientation;
 
 	// update throttle
-	double engineThrust = 1000.0 * config->stages[curFrame->currentStage].maxThrust * throttle;
+	double engineThrust = 1000.0 * atmoThrust * throttle;
 
 	// compute thrust, update fuel status
 	glm::dvec2 thrustAccel;
-	double fuelNeeded = engineThrust / (9.82*config->stages[curFrame->currentStage].Isp) * dt;
+	double fuelNeeded = engineThrust / (9.82*atmoIsp) * dt;
 
 	// have fuel
 	if(fuelNeeded < prevFrame->currentMass - config->stages[curFrame->currentStage].dryMass)
@@ -99,7 +123,7 @@ SimFrame* Simulator::computeNextFrame(SimFrame *prevFrame, glm::dvec2 orientatio
 		// milk last fuel out of current stage
 		double oldStageDuration =
 			(prevFrame->currentMass - config->stages[curFrame->currentStage].dryMass)
-			* 9.82 * config->stages[curFrame->currentStage].Isp
+			* 9.82 * atmoIsp
 			/ engineThrust;
 		double stageAccel = engineThrust/prevFrame->currentMass * oldStageDuration/dt;
 		curFrame->currentMass = config->stages[curFrame->currentStage].dryMass;
@@ -108,25 +132,22 @@ SimFrame* Simulator::computeNextFrame(SimFrame *prevFrame, glm::dvec2 orientatio
 		if(curFrame->currentStage < config->stageCount-1)
 		{
 			curFrame->currentStage++;
-			engineThrust = 1000.0 * config->stages[curFrame->currentStage].maxThrust * throttle;
+
+			// update engine characteristics in atmo
+			atmoThrust = (pressure/config->body.surfacePressure) * config->stages[curFrame->currentStage].maxThrustAtmo
+				+ (1 - pressure/config->body.surfacePressure) * config->stages[curFrame->currentStage].maxThrustVac;
+			atmoIsp = (pressure/config->body.surfacePressure) * config->stages[curFrame->currentStage].IspAtmo
+				+ (1 - pressure/config->body.surfacePressure) * config->stages[curFrame->currentStage].IspVac;
+
+			engineThrust = 1000.0 * atmoThrust * throttle;
 			stageAccel += engineThrust / config->stages[curFrame->currentStage].totalMass * (dt - oldStageDuration)/dt;
 			curFrame->currentMass = config->stages[curFrame->currentStage].totalMass -
-				engineThrust / (9.82*config->stages[curFrame->currentStage].Isp) * (dt - oldStageDuration);
+				engineThrust / (9.82*atmoIsp) * (dt - oldStageDuration);
 		}
 
 		thrustAccel = stageAccel * curFrame->orientation;
 	}
 	//printf("Thrust accel: %lf %lf\n", thrustAccel.x, thrustAccel.y);
-
-	// compute drag (estimate)
-	glm::dvec2 rotationDirection = glm::normalize(glm::dvec2(prevFrame->position.y, -prevFrame->position.x));
-	glm::dvec2 airspeed = prevFrame->velocity - 2*PI*glm::length(prevFrame->position)/config->body.rotationalPeriod * rotationDirection;
-	double pressure = config->body.surfacePressure * pow(E, -(glm::length(prevFrame->position)-config->body.radius)/config->body.scaleHeight);
-	if(pressure <= 0.000001*config->body.surfacePressure)
-		pressure = 0;
-	double density = pressure / (R_CONST * tempFromHeight(glm::length(prevFrame->position)-config->body.radius));
-	glm::dvec2 drag = 0.5 * density * pow(glm::length(airspeed), 2.0) * config->stages[curFrame->currentStage].dragCoefficient
-		* config->stages[curFrame->currentStage].crossSectionalArea / prevFrame->currentMass * -glm::normalize(prevFrame->velocity);
 
 	// compute gravitational acceleration
 	glm::dvec2 g = G * config->body.mass / pow(glm::length(prevFrame->position), 2) * -glm::normalize(prevFrame->position);

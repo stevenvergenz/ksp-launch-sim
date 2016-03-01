@@ -47,15 +47,11 @@ private:
 class OrbitalPilot : public Pilot
 {
 public:
-	OrbitalPilot(int searchDepth = 2, double radialIncrement = PI/12, double throttleIncrement = 0.1);
+	OrbitalPilot();
 	PilotAction getCourse(SimFrame *frame, int depth);
 	PilotAction getCourse(SimFrame *frame);
 
 private:
-	int searchDepth;
-	double radialIncrement;
-	double throttleIncrement;
-
 	double initialDv;
 
 	double evaluateFrame(SimFrame *frame);

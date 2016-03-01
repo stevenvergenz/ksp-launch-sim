@@ -25,27 +25,31 @@ double NullPilot::evaluateFrame(SimFrame *frame)
  * Orbital pilot implementation
  *********************************/
 
-OrbitalPilot::OrbitalPilot(int searchDepth, double radialIncrement, double throttleIncrement)
-	: searchDepth(searchDepth), radialIncrement(radialIncrement), throttleIncrement(throttleIncrement)
+OrbitalPilot::OrbitalPilot()
 {
 
 }
 
 PilotAction OrbitalPilot::getCourse(SimFrame *frame)
 {
-	return getCourse(frame, searchDepth);
+	return getCourse(frame, frame->config->params.searchDepth);
 }
 
 PilotAction OrbitalPilot::getCourse(SimFrame *frame, int depth)
 {
 	PilotAction bestAction;
 	bestAction.score = evaluateAction(frame, NULL_ACTION, depth);
+	if(frame->deltaV() == 0)
+		return bestAction;
+
+	//double horizonAngle = atan2( frame->position.x, frame->position.y) + PI/2;
 
 	// search state space for optimal throttle value
-	for(double throttle = throttleIncrement; throttle <= 1.0; throttle += throttleIncrement)
+	//double throttle = 1.0;
+	for(double throttle = frame->config->params.throttleStep; throttle <= 1.0; throttle += frame->config->params.throttleStep)
 	{
 		// search state space for optimal orientation
-		for(double angle = 0.0; angle < 2*PI; angle += radialIncrement)
+		for(double angle = 0.0; angle < 2*PI; angle += frame->config->params.radialStep)
 		{
 			glm::dvec2 orientation( sin(angle), cos(angle) );
 
@@ -55,11 +59,25 @@ PilotAction OrbitalPilot::getCourse(SimFrame *frame, int depth)
 			a.score = evaluateAction(frame, a, depth);
 
 			// select best outcome
+			if(frame->time == 0 && depth == frame->config->params.searchDepth){
+				double angle = acos( glm::dot(a.orientation, glm::dvec2(frame->position.y, -frame->position.x))
+					/ glm::length(frame->position) ) * 180/PI;
+
+				printf("testing %.2lf, %.2lf -> %lf against %lf\n", a.throttle, angle, a.score, bestAction.score);
+			}
 			if(a.score < bestAction.score){
+				if(frame->time == 0 && depth == frame->config->params.searchDepth)
+					printf("new best score: %lf\n", a.score);
 				bestAction = a;
 			}
 		}
 
+	}
+
+	if(depth == frame->config->params.searchDepth){
+		double angle = acos( glm::dot(bestAction.orientation, glm::dvec2(frame->position.y, -frame->position.x))
+			/ glm::length(frame->position) ) * 180/PI;
+		printf("[%.2lf] %.2lf, %.2lf -> %lf\n", frame->time, bestAction.throttle, angle, bestAction.score);
 	}
 
 	return bestAction;
@@ -89,18 +107,22 @@ double OrbitalPilot::evaluateFrame(SimFrame *frame)
 	double apoapsisDifference = fabs(frame->config->goal.desiredApoapsis + frame->config->body.radius - orbit.x);
 	double periapsisDifference = fabs(frame->config->goal.desiredPeriapsis + frame->config->body.radius - orbit.y);
 
-	double apoapsisPct = apoapsisDifference / (frame->config->goal.desiredApoapsis + frame->config->body.radius);
-	double periapsisPct = periapsisDifference / (frame->config->goal.desiredPeriapsis + frame->config->body.radius);
-
-	double crashPenalty = glm::length(frame->position) < frame->config->body.radius ? 1 : 0;
-
-	double dvPct = frame->deltaV() / initialDv;
+	double pressure = frame->config->body.surfacePressure * pow(E, -(glm::length(frame->position)-frame->config->body.radius)/frame->config->body.scaleHeight);
+	if(pressure <= 0.000001*frame->config->body.surfacePressure)
+		pressure = 0;
+	else if(pressure > frame->config->body.surfacePressure)
+		pressure = frame->config->body.surfacePressure;
+	double atmospherePenalty = pressure;
 
 	// smaller value, closer to goal
-	return 1 * apoapsisPct
-		+ 1 * periapsisPct
-		+ 100 * crashPenalty
-		//- 1 * dvPct
+	double score;
+	score =
+		(1 * apoapsisDifference + 1 * periapsisDifference)// / (frame->deltaV())
+		//+ 10000 * crashPenalty
+		+ 8 * atmospherePenalty
+		- 2 * frame->deltaV()
 		;
+
+	return score;
 }
 

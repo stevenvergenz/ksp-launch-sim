@@ -19,14 +19,18 @@ void PathGraph::paintEvent(QPaintEvent* event)
 	p.setBrush(Qt::transparent);
 	QRectF world(-6e5, -6e5, 1.2e6, 1.2e6);
 	world = view.mapRect(world);
+
 	//printf("world: %lf %lf %lf %lf\n", world.left(), world.top(), world.width(), world.height());
 	p.drawEllipse(world);
+	world = view.mapRect(QRectF(-670000, -670000, 1.34e6, 1.34e6));
+	p.setPen(Qt::lightGray);
+	p.drawEllipse(world);
+
+	p.setPen(Qt::lightGray);
+	p.drawLine(view.map(QPoint(-100000,0)), view.map(QPoint(100000,0)));
+	p.drawLine(view.map(QPoint(0,-100000)), view.map(QPoint(0,100000)));
 
 	p.setPen(Qt::black);
-	p.drawLine(view.map(QPoint(-1000000,1000000)), view.map(QPoint(1000000,-1000000)));
-	p.drawLine(view.map(QPoint(-1000000,0)), view.map(QPoint(1000000,0)));
-	p.drawLine(view.map(QPoint(0,-1000000)), view.map(QPoint(0,1000000)));
-
 	auto positions = *(this->positions);
 	for(int i=1; i<positions.length(); ++i)
 	{

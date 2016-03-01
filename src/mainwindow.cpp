@@ -11,33 +11,50 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	connect(ui->btnStart, SIGNAL(clicked(bool)), this, SLOT(startSim()));
 
-	config->stages[0] = SimulationConfig::StageInfo(
-		940.0+1000.0, // dry mass
-		940.0+5000.0, // total mass
-		300.0, // thrust
-		1000.0, // Isp
-		1.767, // cross-sectional area
-		0.248  // drag coefficient
-	);
+	SimulationConfig::StageInfo stage;
+	stage.dryMass = 6000+4000;
+	stage.totalMass = 6000+36000;
+	stage.maxThrustAtmo = 1379.03;
+	stage.maxThrustVac = 1500;
+	stage.IspAtmo = 285;
+	stage.IspVac = 310;
+	stage.crossSectionalArea = 1.767;
+	stage.dragCoefficient = 0.248;
+
+	config->stages[0] = stage;
 	config->stageCount = 1;
 	config->body = KerbolSystem::Kerbin;
-	config->params.duration = 1000.0;
-	config->params.timeResolution = 0.1;
+
+	config->params.duration = 2000;
+	config->params.timeResolution = 1;
+	config->params.searchDepth = 2;
+	config->params.throttleStep = 0.2;
+	config->params.radialStep = PI/12;
+
 	config->goal.desiredApoapsis = 100000;
 	config->goal.desiredPeriapsis = 100000;
 }
 
 void MainWindow::startSim()
 {
-	ui->pathViewer->clear();
-	sim = new Simulator(config);
+	if(sim == nullptr)
+	{
+		ui->pathViewer->clear();
+		sim = new Simulator(config);
 
-	// connect slots
-	connect(sim, SIGNAL(start(const SimFrame*)), this, SLOT(log(const SimFrame*)));
-	connect(sim, SIGNAL(update(const SimFrame*)), this, SLOT(log(const SimFrame*)));
-	connect(sim, SIGNAL(done()), this, SLOT(analyseResults()));
+		// connect slots
+		connect(sim, SIGNAL(start(const SimFrame*)), this, SLOT(log(const SimFrame*)));
+		connect(sim, SIGNAL(update(const SimFrame*)), this, SLOT(log(const SimFrame*)));
+		connect(sim, SIGNAL(done()), this, SLOT(analyseResults()));
 
-	QThreadPool::globalInstance()->start(sim);
+		QThreadPool::globalInstance()->start(sim);
+		ui->btnStart->setText("Stop");
+	}
+	else
+	{
+		sim->abort = true;
+		ui->btnStart->setDisabled(true);
+	}
 }
 
 void MainWindow::log(const SimFrame * frame)
@@ -61,7 +78,7 @@ void MainWindow::log(const SimFrame * frame)
 		ui->textEdit->append(timestamp + str);
 
 		ui->statusBar->showMessage(QString("%1 apoapsis, %2 periapsis")
-			.arg(frame->orbit().x).arg(frame->orbit().y)
+			.arg(frame->orbit().x - frame->config->body.radius).arg(frame->orbit().y - frame->config->body.radius)
 		);
 
 		ui->pathViewer->addVertex(QPointF(frame->position.x, frame->position.y));

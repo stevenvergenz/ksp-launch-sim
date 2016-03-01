@@ -8,7 +8,6 @@
 #include "glm/vec2.hpp"
 #include "glm/vec3.hpp"
 
-#define G 6.67408e-11
 
 class SimFrame
 {
