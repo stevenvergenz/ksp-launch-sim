@@ -1,25 +1,19 @@
 #include "simulator.h"
 
-Simulator::Simulator(SimulationConfig* config) : abort(false), config(config), lastFlight(nullptr)
+Simulator::Simulator(SimulationConfig* config) : abort(false), config(config)
 {
 
 }
 
 Simulator::~Simulator()
 {
-	// delete loose sim memory
-	if(lastFlight != nullptr){
-		SimFrame* i = lastFlight;
-		while(i != nullptr){
-			SimFrame* tmp = i->next;
-			delete i;
-			i = tmp;
-		}
-	}
+
 }
 
 void Simulator::run()
 {
+	PriorityQueue queue;
+
 	// set up initial state
 	SimFrame* prevFrame = new SimFrame();
 	prevFrame->config = config;
@@ -29,6 +23,9 @@ void Simulator::run()
 	prevFrame->time = 0.0;
 	prevFrame->position = glm::dvec2(0.0, config->body.radius);
 	prevFrame->velocity = glm::dvec2(2*PI*config->body.radius/config->body.rotationalPeriod, 0.0);
+
+	queue.push(prevFrame, evaluateFrame(prevFrame));
+
 
 }
 
@@ -126,7 +123,7 @@ SimFrame* Simulator::computeNextFrame(SimFrame *prevFrame, glm::dvec2 orientatio
 double Simulator::evaluateFrame(SimFrame *frame)
 {
 	glm::dvec2 orbit = frame->orbit();
-	double mu = G * config->body.mass;
+	double mu = G * frame->config->body.mass;
 
 	double actualV1, neededV1, deltaV1;
 	double actualV2, neededV2, deltaV2;
@@ -143,6 +140,7 @@ double Simulator::evaluateFrame(SimFrame *frame)
 	}
 
 	// compute delta-v to raise orbit to goal from current apoapsis
+	double h = glm::length( glm::cross(glm::dvec3(frame->position, 0.0), glm::dvec3(frame->velocity, 0.0)) );
 	actualV1 = h / orbit.x;
 	neededEnergy = -mu / (orbit.x + newRadius);
 	neededV1 = sqrt( 2*neededEnergy + 2*mu/orbit.x );

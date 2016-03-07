@@ -1,32 +1,32 @@
 #ifndef PRIORITYQUEUE_H
 #define PRIORITYQUEUE_H
 
+#include <cstring>
 #include "simframe.h"
 
 struct PQueueItem
 {
 	SimFrame* item;
-	PQueueItem* prev;
-	PQueueItem* next;
+	double score;
 };
 
 
 class PriorityQueue
 {
 public:
-	PriorityQueue();
+	PriorityQueue(int capacity = 100);
 	~PriorityQueue();
 
-	void insert(SimFrame* item, double score);
-	void pop();
+	void push(SimFrame* item, double score);
+	SimFrame* pop(double* score = nullptr);
 
-signals:
-
-public slots:
 
 private:
-	PQueueItem* head;
+	PQueueItem* heap;
+	int capacity;
+	int count;
 
+	void resizeHeap(int newCapacity);
 };
 
 #endif // PRIORITYQUEUE_H
