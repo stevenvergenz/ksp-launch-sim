@@ -27,10 +27,8 @@ public:
 	void run();
 
 signals:
-	void start(const SimFrame* initFrame);
-	void update(const SimFrame* updateFrame);
-	void done();
-
+	void update(const SimFrame* updateFrame, double score);
+	void done(const SimFrame* bestResult);
 
 private:
 	SimulationConfig* config;

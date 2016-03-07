@@ -20,6 +20,7 @@ public:
 	void push(SimFrame* item, double score);
 	SimFrame* pop(double* score = nullptr);
 
+	bool isEmpty();
 
 private:
 	PQueueItem* heap;

@@ -1,13 +1,17 @@
 #include "priorityqueue.h"
 
+
 PriorityQueue::PriorityQueue(int capacity)
+	: capacity(capacity), count(0)
 {
 	heap = new PQueueItem[capacity+1];
-	capacity = capacity;
 }
 
 PriorityQueue::~PriorityQueue()
 {
+	for(int i=1; i<count; i++){
+		SimFrame::freeLeaves( heap[i].item );
+	}
 	delete heap;
 }
 
@@ -18,12 +22,12 @@ void PriorityQueue::push(SimFrame *item, double score)
 		resizeHeap(capacity*2);
 
 	// add new item to heap
-	heap[count].item = item;
-	heap[count].score = score;
+	heap[count+1].item = item;
+	heap[count+1].score = score;
 	count++;
 
 	// bubble up as necessary
-	int i = count-1;
+	int i = count;
 	while(i>1){
 		if( heap[i].score < heap[i/2].score ){
 			auto temp = heap[i/2];
@@ -79,7 +83,12 @@ void PriorityQueue::resizeHeap(int newCapacity)
 {
 	PQueueItem* newHeap = new PQueueItem[newCapacity+1];
 	memcpy(newHeap+1, heap+1, count*sizeof(PQueueItem));
-
+	capacity = newCapacity;
 	delete heap;
 	heap = newHeap;
+}
+
+bool PriorityQueue::isEmpty()
+{
+	return count == 0;
 }

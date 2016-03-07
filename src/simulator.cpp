@@ -12,21 +12,93 @@ Simulator::~Simulator()
 
 void Simulator::run()
 {
-	PriorityQueue queue;
+	PriorityQueue fringe;
+	QList<SimFrame*> terminalFrames;
+
+	SimFrame* bestFrame = nullptr;
+	double bestScore = 100000;
 
 	// set up initial state
-	SimFrame* prevFrame = new SimFrame();
-	prevFrame->config = config;
-	prevFrame->currentStage = 0;
-	prevFrame->currentMass = config->stages[0].totalMass;
+	SimFrame* frame = new SimFrame();
+	frame->config = config;
+	frame->currentStage = 0;
+	frame->currentMass = config->stages[0].totalMass;
 
-	prevFrame->time = 0.0;
-	prevFrame->position = glm::dvec2(0.0, config->body.radius);
-	prevFrame->velocity = glm::dvec2(2*PI*config->body.radius/config->body.rotationalPeriod, 0.0);
+	frame->time = 0.0;
+	frame->position = glm::dvec2(0.0, config->body.radius);
+	frame->velocity = glm::dvec2(2*PI*config->body.radius/config->body.rotationalPeriod, 0.0);
+	frame->orientation = glm::dvec2(0, 1);
+	frame->throttle = 0.0;
+	frame->deltaVSpent = 0.0;
 
-	queue.push(prevFrame, evaluateFrame(prevFrame));
+	frame->prev = nullptr;
+	frame->_refCount = 0;
 
+	fringe.push(frame, evaluateFrame(frame));
 
+	while(!abort && !fringe.isEmpty())
+	{
+		double score;
+		frame = fringe.pop(&score);
+		emit update(frame, score);
+
+		auto orbit = frame->orbit();
+		bool goalMet =
+			fabs(orbit.x - frame->config->body.radius - frame->config->goal.desiredApoapsis) < 1000
+			&& fabs(orbit.y - frame->config->body.radius - frame->config->goal.desiredPeriapsis) < 1000;
+
+		// update latest best path
+		if(goalMet && score < bestScore){
+			bestFrame = frame;
+			bestScore = score;
+		}
+
+		// check for terminal conditions
+		if(frame->time > frame->config->params.duration
+			|| frame->deltaVVac() == 0
+			|| glm::length(frame->position) < frame->config->body.radius
+			|| goalMet
+		){
+			terminalFrames.push_back(frame);
+			continue;
+		}
+
+		// enumerate state space
+
+		// what if I do nothing?
+		SimFrame* next = computeNextFrame(frame, glm::dvec2(0,1), 0);
+		next->orientation = glm::dvec2(0,1);
+		next->throttle = 0;
+		next->prev = frame;
+		frame->_refCount++;
+		fringe.push( next, frame->deltaVSpent + evaluateFrame(next) );
+
+		// for each orientation
+		for(double angle=0.0; angle < 2*PI; angle += frame->config->params.radialStep)
+		{
+			glm::dvec2 orientation(sin(angle), cos(angle));
+
+			// for each throttle position
+			for(double throttle=frame->config->params.throttleStep; throttle<1.0; throttle+=frame->config->params.throttleStep)
+			{
+				// get resulting state
+				next = computeNextFrame(frame, orientation, throttle);
+				next->orientation = orientation;
+				next->throttle = throttle;
+				next->prev = frame;
+				frame->_refCount++;
+				fringe.push( next, frame->deltaVSpent + evaluateFrame(next) );
+			}
+		}
+
+	}
+
+	// clean up suboptimal paths
+	for(int i=0; i<terminalFrames.length(); i++)
+		if(terminalFrames[i] != bestFrame)
+			SimFrame::freeLeaves(terminalFrames[i]);
+
+	emit done(bestFrame);
 }
 
 
@@ -41,7 +113,6 @@ SimFrame* Simulator::computeNextFrame(SimFrame *prevFrame, glm::dvec2 orientatio
 	curFrame->config = prevFrame->config;
 	curFrame->time = prevFrame->time + dt;
 	curFrame->currentStage = prevFrame->currentStage;
-	curFrame->prev = prevFrame;
 
 	// compute atmo drag (estimate)
 	glm::dvec2 rotationDirection = glm::normalize(glm::dvec2(prevFrame->position.y, -prevFrame->position.x));
@@ -116,6 +187,7 @@ SimFrame* Simulator::computeNextFrame(SimFrame *prevFrame, glm::dvec2 orientatio
 	// apply forces
 	curFrame->velocity = (g+thrustAccel+drag)*dt + prevFrame->velocity;
 	curFrame->position = 0.5*(g+thrustAccel+drag)*pow(dt,2) + prevFrame->velocity*dt + prevFrame->position;
+	curFrame->deltaVSpent = prevFrame->deltaVSpent + curFrame->deltaVVac() - prevFrame->deltaVVac();
 	return curFrame;
 }
 
@@ -152,10 +224,7 @@ double Simulator::evaluateFrame(SimFrame *frame)
 	neededV2 = sqrt( 2*neededEnergy + 2*mu/newRadius );
 	deltaV2 = fabs(neededV2 - actualV2);
 
-	return
-		2*(deltaV1 + deltaV2)
-		- 1*frame->deltaV()
-		;
+	return deltaV1 + deltaV2;
 }
 
 double Simulator::tempFromHeight(double height)

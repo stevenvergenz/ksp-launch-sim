@@ -5,18 +5,28 @@ SimFrame::SimFrame() : config(nullptr), prev(nullptr)
 
 }
 
-double SimFrame::deltaV() const
+double SimFrame::deltaVVac() const
 {
-	double pressure = config->body.surfacePressure * pow(E, -(glm::length(position)-config->body.radius)/config->body.scaleHeight);
-	if(pressure <= 0.000001*config->body.surfacePressure)
-		pressure = 0;
-	else if(pressure > config->body.surfacePressure)
-		pressure = config->body.surfacePressure;
+	double deltaV = 0;
+	for(int i=currentStage; i<config->stageCount; i++)
+	{
+		double atmoIsp = config->stages[i].IspVac;
+		double mass = i == currentStage ? currentMass : config->stages[i].totalMass;
+		deltaV += atmoIsp * 9.82 * log(mass / config->stages[i].dryMass);
+	}
+	return deltaV;
+}
 
-	double atmoIsp = (pressure/config->body.surfacePressure) * config->stages[currentStage].IspAtmo
-		+ (1 - pressure/config->body.surfacePressure) * config->stages[currentStage].IspVac;
-
-	return atmoIsp * 9.82 * log(currentMass / config->stages[currentStage].dryMass);
+double SimFrame::deltaVAtmo() const
+{
+	double deltaV = 0;
+	for(int i=currentStage; i<config->stageCount; i++)
+	{
+		double atmoIsp = config->stages[i].IspAtmo;
+		double mass = i == currentStage ? currentMass : config->stages[i].totalMass;
+		deltaV += atmoIsp * 9.82 * log(mass / config->stages[i].dryMass);
+	}
+	return deltaV;
 }
 
 glm::dvec2 SimFrame::orbit() const
@@ -29,4 +39,14 @@ glm::dvec2 SimFrame::orbit() const
 
 	// {x: apoapsis, y: periapsis}
 	return glm::dvec2(param / (1-eccentricity), param / (1+eccentricity));
+}
+
+void SimFrame::freeLeaves(SimFrame* node)
+{
+	if(node->_refCount <= 0){
+		SimFrame* prev = node->prev;
+		delete node;
+		prev->_refCount--;
+		SimFrame::freeLeaves(prev);
+	}
 }

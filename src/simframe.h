@@ -13,7 +13,8 @@ class SimFrame
 {
 public:
 	SimFrame();
-	double deltaV() const;
+	double deltaVVac() const;
+	double deltaVAtmo() const;
 	glm::dvec2 orbit() const;
 
 	SimulationConfig* config;
@@ -27,8 +28,12 @@ public:
 	glm::dvec2 orientation;
 	double throttle;
 
-	double score;
+	double deltaVSpent;
+
 	SimFrame* prev;
+	int _refCount;
+
+	static void freeLeaves(SimFrame* frame);
 };
 
 #endif // SIMFRAME_H

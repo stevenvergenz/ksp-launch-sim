@@ -43,9 +43,8 @@ void MainWindow::startSim()
 		sim = new Simulator(config);
 
 		// connect slots
-		connect(sim, SIGNAL(start(const SimFrame*)), this, SLOT(log(const SimFrame*)));
-		connect(sim, SIGNAL(update(const SimFrame*)), this, SLOT(log(const SimFrame*)));
-		connect(sim, SIGNAL(done()), this, SLOT(analyseResults()));
+		connect(sim, SIGNAL(update(const SimFrame*, double)), this, SLOT(log(const SimFrame*, double)));
+		connect(sim, SIGNAL(done(const SimFrame*)), this, SLOT(analyseResults(const SimFrame*)));
 
 		QThreadPool::globalInstance()->start(sim);
 		ui->btnStart->setText("Stop");
@@ -57,9 +56,9 @@ void MainWindow::startSim()
 	}
 }
 
-void MainWindow::log(const SimFrame * frame)
+void MainWindow::log(const SimFrame * frame, double score)
 {
-	QString timestamp = QString("[%1] ").arg(QDateTime::currentDateTime().toString("hh:mm"));
+	/*QString timestamp = QString("[%1] ").arg(QDateTime::currentDateTime().toString("hh:mm"));
 
 	static double lastReportTime = 0.0;
 
@@ -74,7 +73,7 @@ void MainWindow::log(const SimFrame * frame)
 			.arg(glm::length(frame->position) - frame->config->body.radius, 4, 'f', 2)
 			.arg(glm::length(frame->velocity), 4, 'f', 2)
 			.arg(angle, 2, 'f', 0)
-			.arg(frame->deltaV(), 2, 'f', 2);
+			.arg(frame->deltaVVac(), 2, 'f', 2);
 		ui->textEdit->append(timestamp + str);
 
 		ui->statusBar->showMessage(QString("%1 apoapsis, %2 periapsis")
@@ -82,11 +81,11 @@ void MainWindow::log(const SimFrame * frame)
 		);
 
 		ui->pathViewer->addVertex(QPointF(frame->position.x, frame->position.y));
-	}
+	}*/
 
 }
 
-void MainWindow::analyseResults()
+void MainWindow::analyseResults(const SimFrame *bestResult)
 {
 	ui->textEdit->append(QString("[%1] Simulation complete")
 		.arg(QDateTime::currentDateTime().toString("hh:mm"))
