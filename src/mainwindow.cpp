@@ -26,7 +26,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	config->body = KerbolSystem::Kerbin;
 
 	config->params.duration = 2000;
-	config->params.timeResolution = 1;
+	config->params.timeResolution = 5;
 	config->params.searchDepth = 2;
 	config->params.throttleStep = 0.2;
 	config->params.radialStep = PI/12;
@@ -83,6 +83,8 @@ void MainWindow::log(const SimFrame * frame, double score)
 		ui->pathViewer->addVertex(QPointF(frame->position.x, frame->position.y));
 	}*/
 
+	if(frame->prev != nullptr)
+		ui->pathViewer->addBranch( QPointF(frame->prev->position.x, frame->prev->position.y), QPointF(frame->position.x, frame->position.y) );
 }
 
 void MainWindow::analyseResults(const SimFrame *bestResult)

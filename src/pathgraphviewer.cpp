@@ -9,7 +9,7 @@ PathGraphViewer::PathGraphViewer(QWidget *parent) :
 
 {
 	ui->setupUi(this);
-	ui->widget->setPositionList(&positions);
+	ui->widget->setPathList(&paths);
 	ui->widget->setViewWindow(QRectF(-6e5, -6e5, 1.2e6, 1.2e6));
 
 	connect(ui->widget, SIGNAL(viewUpdated(QRect,int)), this, SLOT(updateScaleScroll(QRect,int)));
@@ -20,20 +20,20 @@ PathGraphViewer::~PathGraphViewer()
 	delete ui;
 }
 
-void PathGraphViewer::addVertex(QPointF point)
+void PathGraphViewer::addBranch(QPointF from, QPointF to)
 {
-	positions.push_back(point);
+	paths.push_back( QLineF(from, to) );
 
 	bool update = true;
-	if(point.x() > max.x())
-		max.setX(point.x());
-	if(point.x() < min.x())
-		min.setX(point.x());
-	if(point.y() > max.y())
-		max.setY(point.y());
-	if(point.y() < min.y())
-		min.setY(point.y());
-	if(point.x() < max.x() && point.x() > min.x() && point.y() < max.y() && point.y() > min.y())
+	if(to.x() > max.x())
+		max.setX(to.x());
+	if(to.x() < min.x())
+		min.setX(to.x());
+	if(to.y() > max.y())
+		max.setY(to.y());
+	if(to.y() < min.y())
+		min.setY(to.y());
+	if(to.x() < max.x() && to.x() > min.x() && to.y() < max.y() && to.y() > min.y())
 		update = false;
 
 	if(update){
@@ -54,7 +54,7 @@ void PathGraphViewer::updateScaleScroll(QRect scrollArea, int scale)
 
 void PathGraphViewer::clear()
 {
-	positions.clear();
+	paths.clear();
 	ui->widget->setViewWindow(QRectF(-6e5, -6e5, 1.2e6, 1.2e6));
 
 }

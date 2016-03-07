@@ -19,22 +19,26 @@ void PathGraph::paintEvent(QPaintEvent* event)
 	p.setBrush(Qt::transparent);
 	QRectF world(-6e5, -6e5, 1.2e6, 1.2e6);
 	world = view.mapRect(world);
-
-	//printf("world: %lf %lf %lf %lf\n", world.left(), world.top(), world.width(), world.height());
 	p.drawEllipse(world);
+
+	// draw atmo
 	world = view.mapRect(QRectF(-670000, -670000, 1.34e6, 1.34e6));
 	p.setPen(Qt::lightGray);
 	p.drawEllipse(world);
 
+	// draw center of gravity
 	p.setPen(Qt::lightGray);
 	p.drawLine(view.map(QPoint(-100000,0)), view.map(QPoint(100000,0)));
 	p.drawLine(view.map(QPoint(0,-100000)), view.map(QPoint(0,100000)));
 
+	// draw lines
 	p.setPen(Qt::black);
-	auto positions = *(this->positions);
+	auto positions = *(this->paths);
 	for(int i=1; i<positions.length(); ++i)
 	{
-		p.drawLine( view.map(QLineF(positions[i-1], positions[i])) );
+		//p.drawLine( view.map(positions[i]) );
+		if( event->rect().contains( view.map(positions[i].p2().toPoint()) ) )
+			p.drawPoint( view.map(positions[i].p2()) );
 	}
 
 	// draw background
@@ -68,6 +72,6 @@ void PathGraph::resizeEvent(QResizeEvent *event){
 	setViewWindow(viewBox, false);
 }
 
-void PathGraph::setPositionList(const QList<QPointF> * const list){
-	positions = list;
+void PathGraph::setPathList(const QList<QLineF> * const list){
+	paths = list;
 }

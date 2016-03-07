@@ -19,7 +19,7 @@ class PathGraph : public QWidget
 	Q_OBJECT
 public:
 	explicit PathGraph(QWidget *parent = 0);
-	void setPositionList(const QList<QPointF>* const list);
+	void setPathList(const QList<QLineF>* const list);
 
 signals:
 	void viewUpdated(QRect scrollArea, int scale);
@@ -28,7 +28,7 @@ public slots:
 	void setViewWindow(QRectF view, bool update = true);
 
 protected:
-	const QList<QPointF>* positions;
+	const QList<QLineF>* paths;
 	QRectF viewBox;
 	QTransform view;
 
