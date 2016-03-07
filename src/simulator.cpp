@@ -71,6 +71,7 @@ void Simulator::run()
 		next->throttle = 0;
 		next->prev = frame;
 		frame->_refCount++;
+		next->_refCount = 0;
 		fringe.push( next, frame->deltaVSpent + evaluateFrame(next) );
 
 		// for each orientation
@@ -87,6 +88,7 @@ void Simulator::run()
 				next->throttle = throttle;
 				next->prev = frame;
 				frame->_refCount++;
+				next->_refCount = 0;
 				fringe.push( next, frame->deltaVSpent + evaluateFrame(next) );
 			}
 		}
@@ -97,6 +99,7 @@ void Simulator::run()
 	for(int i=0; i<terminalFrames.length(); i++)
 		if(terminalFrames[i] != bestFrame)
 			SimFrame::freeLeaves(terminalFrames[i]);
+
 
 	emit done(bestFrame);
 }
@@ -187,7 +190,7 @@ SimFrame* Simulator::computeNextFrame(SimFrame *prevFrame, glm::dvec2 orientatio
 	// apply forces
 	curFrame->velocity = (g+thrustAccel+drag)*dt + prevFrame->velocity;
 	curFrame->position = 0.5*(g+thrustAccel+drag)*pow(dt,2) + prevFrame->velocity*dt + prevFrame->position;
-	curFrame->deltaVSpent = prevFrame->deltaVSpent + curFrame->deltaVVac() - prevFrame->deltaVVac();
+	curFrame->deltaVSpent = prevFrame->deltaVSpent + prevFrame->deltaVVac() - curFrame->deltaVVac();
 	return curFrame;
 }
 

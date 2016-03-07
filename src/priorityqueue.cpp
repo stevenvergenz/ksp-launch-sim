@@ -9,7 +9,7 @@ PriorityQueue::PriorityQueue(int capacity)
 
 PriorityQueue::~PriorityQueue()
 {
-	for(int i=1; i<count; i++){
+	for(int i=1; i<=count; i++){
 		SimFrame::freeLeaves( heap[i].item );
 	}
 	delete heap;
@@ -48,7 +48,7 @@ SimFrame* PriorityQueue::pop(double* score)
 
 	// get node with highest priority
 	PQueueItem head = heap[1];
-	heap[1] = heap[count-1];
+	heap[1] = heap[count];
 	count--;
 
 	// bubble new head down

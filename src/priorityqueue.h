@@ -14,7 +14,7 @@ struct PQueueItem
 class PriorityQueue
 {
 public:
-	PriorityQueue(int capacity = 100);
+	PriorityQueue(int capacity = 10000);
 	~PriorityQueue();
 
 	void push(SimFrame* item, double score);

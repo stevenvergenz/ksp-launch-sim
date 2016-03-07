@@ -43,10 +43,11 @@ glm::dvec2 SimFrame::orbit() const
 
 void SimFrame::freeLeaves(SimFrame* node)
 {
-	if(node->_refCount <= 0){
+	if(node != nullptr && node->_refCount == 0){
 		SimFrame* prev = node->prev;
 		delete node;
-		prev->_refCount--;
+		if(prev != nullptr)
+			prev->_refCount--;
 		SimFrame::freeLeaves(prev);
 	}
 }
