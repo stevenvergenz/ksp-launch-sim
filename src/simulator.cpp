@@ -20,19 +20,6 @@ Simulator::~Simulator()
 
 void Simulator::run()
 {
-	oldRun();
-}
-
-void Simulator::oldRun()
-{
-	// clean up last flight
-	SimFrame* i = lastFlight;
-	while(i != nullptr){
-		SimFrame* tmp = i->next;
-		delete i;
-		i = tmp;
-	}
-
 	// set up initial state
 	SimFrame* prevFrame = new SimFrame();
 	prevFrame->config = config;
@@ -40,42 +27,12 @@ void Simulator::oldRun()
 	prevFrame->currentMass = config->stages[0].totalMass;
 
 	prevFrame->time = 0.0;
-	prevFrame->orientation = glm::normalize(glm::dvec2(0.0, 1.0));
-	prevFrame->throttle = 1.0;
-
 	prevFrame->position = glm::dvec2(0.0, config->body.radius);
 	prevFrame->velocity = glm::dvec2(2*PI*config->body.radius/config->body.rotationalPeriod, 0.0);
 
-	// set up pilot
-	Pilot* pilot = (Pilot*) new OrbitalPilot();
-
-	emit start(prevFrame);
-
-	// start simulation loop
-	do
-	{
-		auto action = pilot->getCourse(prevFrame);
-		SimFrame* curFrame = computeNextFrame(prevFrame, action.orientation, action.throttle);
-
-		//printf("change in dV at %.2lf: %lf\n", glm::length(prevFrame->position), prevFrame->deltaV() - curFrame->deltaV());
-
-		// post update
-		emit update(curFrame);
-
-		// new becomes old
-		prevFrame = curFrame;
-
-		// NOTE: Frames are not freed as the sim progresses.
-		// Let the event listener handle that
-	}
-	// while rocket is above the ground and the sim hasn't timed out
-	//while(glm::length(prevFrame->position) > config->body.radius && prevFrame->time < config->params.duration);
-	while(!abort && prevFrame->time < config->params.duration && glm::length(prevFrame->position) > 10000);
-
-	emit done();
-
-	delete pilot;
 }
+
+
 
 SimFrame* Simulator::computeNextFrame(SimFrame *prevFrame, glm::dvec2 orientation, double throttle)
 {
@@ -163,6 +120,44 @@ SimFrame* Simulator::computeNextFrame(SimFrame *prevFrame, glm::dvec2 orientatio
 	curFrame->velocity = (g+thrustAccel+drag)*dt + prevFrame->velocity;
 	curFrame->position = 0.5*(g+thrustAccel+drag)*pow(dt,2) + prevFrame->velocity*dt + prevFrame->position;
 	return curFrame;
+}
+
+
+double Simulator::evaluateFrame(SimFrame *frame)
+{
+	glm::dvec2 orbit = frame->orbit();
+	double mu = G * config->body.mass;
+
+	double actualV1, neededV1, deltaV1;
+	double actualV2, neededV2, deltaV2;
+	double neededEnergy, newRadius, oppositeRadius;
+
+	// rename goal apo/peri based on current estimated apoapsis
+	if(orbit.x > frame->config->goal.desiredPeriapsis){
+		newRadius = frame->config->body.radius + frame->config->goal.desiredPeriapsis;
+		oppositeRadius = frame->config->body.radius + frame->config->goal.desiredApoapsis;
+	}
+	else {
+		newRadius = frame->config->body.radius + frame->config->goal.desiredApoapsis;
+		oppositeRadius = frame->config->body.radius + frame->config->goal.desiredPeriapsis;
+	}
+
+	// compute delta-v to raise orbit to goal from current apoapsis
+	actualV1 = h / orbit.x;
+	neededEnergy = -mu / (orbit.x + newRadius);
+	neededV1 = sqrt( 2*neededEnergy + 2*mu/orbit.x );
+	deltaV1 = fabs(neededV1 - actualV1);
+
+	// compute delta-v to raise old apoapsis to goal from opposite side
+	actualV2 = sqrt( 2*neededEnergy	+ 2*mu/newRadius );
+	neededEnergy = -mu / (newRadius + oppositeRadius);
+	neededV2 = sqrt( 2*neededEnergy + 2*mu/newRadius );
+	deltaV2 = fabs(neededV2 - actualV2);
+
+	return
+		2*(deltaV1 + deltaV2)
+		- 1*frame->deltaV()
+		;
 }
 
 double Simulator::tempFromHeight(double height)

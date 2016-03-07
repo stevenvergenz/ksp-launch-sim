@@ -20,7 +20,6 @@ SOURCES += main.cpp\
     pathgraph.cpp \
 	simframe.cpp \
     pathgraphviewer.cpp \
-    pilot.cpp \
     priorityqueue.cpp
 
 HEADERS  += mainwindow.h \
@@ -29,7 +28,6 @@ HEADERS  += mainwindow.h \
     pathgraph.h \
 	simframe.h \
     pathgraphviewer.h \
-    pilot.h \
     priorityqueue.h
 
 FORMS    += mainwindow.ui \

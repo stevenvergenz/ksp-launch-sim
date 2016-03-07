@@ -24,11 +24,7 @@ public:
 	~Simulator();
 
 	bool abort;
-
 	void run();
-	void oldRun();
-
-	static SimFrame* computeNextFrame(SimFrame* prevFrame, glm::dvec2 orientation = glm::dvec2(), double throttle = 1.0);
 
 signals:
 	void start(const SimFrame* initFrame);
@@ -38,8 +34,9 @@ signals:
 
 private:
 	SimulationConfig* config;
-	SimFrame* lastFlight;
 
+	static SimFrame* computeNextFrame(SimFrame* prevFrame, glm::dvec2 orientation = glm::dvec2(), double throttle = 1.0);
+	static double evaluateFrame(SimFrame* frame);
 	static double tempFromHeight(double height);
 };
 
