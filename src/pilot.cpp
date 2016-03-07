@@ -103,7 +103,7 @@ double OrbitalPilot::evaluateAction(SimFrame* frame, PilotAction action, int dep
 
 double OrbitalPilot::evaluateFrame(SimFrame *frame)
 {
-	glm::dvec2 orbit = frame->orbit();
+	/*glm::dvec2 orbit = frame->orbit();
 	double apoapsisDifference = fabs(frame->config->goal.desiredApoapsis + frame->config->body.radius - orbit.x);
 	double periapsisDifference = fabs(frame->config->goal.desiredPeriapsis + frame->config->body.radius - orbit.y);
 
@@ -123,6 +123,40 @@ double OrbitalPilot::evaluateFrame(SimFrame *frame)
 		- 2 * frame->deltaV()
 		;
 
-	return score;
+	return score;*/
+
+	glm::dvec2 orbit = frame->orbit();
+	double mu = G * config->body.mass;
+
+	double actualV1, neededV1, deltaV1;
+	double actualV2, neededV2, deltaV2;
+	double neededEnergy, newRadius, oppositeRadius;
+
+	// rename goal apo/peri based on current estimated apoapsis
+	if(orbit.x > frame->config->goal.desiredPeriapsis){
+		newRadius = frame->config->body.radius + frame->config->goal.desiredPeriapsis;
+		oppositeRadius = frame->config->body.radius + frame->config->goal.desiredApoapsis;
+	}
+	else {
+		newRadius = frame->config->body.radius + frame->config->goal.desiredApoapsis;
+		oppositeRadius = frame->config->body.radius + frame->config->goal.desiredPeriapsis;
+	}
+
+	// compute delta-v to raise orbit to goal from current apoapsis
+	actualV1 = h / orbit.x;
+	neededEnergy = -mu / (orbit.x + newRadius);
+	neededV1 = sqrt( 2*neededEnergy + 2*mu/orbit.x );
+	deltaV1 = fabs(neededV1 - actualV1);
+
+	// compute delta-v to raise old apoapsis to goal from opposite side
+	actualV2 = sqrt( 2*neededEnergy	+ 2*mu/newRadius );
+	neededEnergy = -mu / (newRadius + oppositeRadius);
+	neededV2 = sqrt( 2*neededEnergy + 2*mu/newRadius );
+	deltaV2 = fabs(neededV2 - actualV2);
+
+	return
+		2*(deltaV1 + deltaV2)
+		- 1*frame->deltaV()
+		;
 }
 

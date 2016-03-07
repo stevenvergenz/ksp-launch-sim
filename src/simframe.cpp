@@ -21,11 +21,11 @@ double SimFrame::deltaV() const
 
 glm::dvec2 SimFrame::orbit() const
 {
-	double angularMomentum = glm::length( glm::cross(glm::dvec3(position,0.0), glm::dvec3(velocity,0.0)) );
+	double h = glm::length( glm::cross(glm::dvec3(position,0.0), glm::dvec3(velocity,0.0)) ); // specific angular momentum
 	double mu = G * config->body.mass;
-	double param = pow(angularMomentum, 2) / mu;
+	double param = pow(h, 2) / mu;
 	double energy = pow(glm::length(velocity),2) / 2 - mu/glm::length(position);
-	double eccentricity = sqrt( 1 + 2*energy*pow(angularMomentum,2) / pow(mu,2) );
+	double eccentricity = sqrt( 1 + 2*energy*pow(h,2) / pow(mu,2) );
 
 	// {x: apoapsis, y: periapsis}
 	return glm::dvec2(param / (1-eccentricity), param / (1+eccentricity));
