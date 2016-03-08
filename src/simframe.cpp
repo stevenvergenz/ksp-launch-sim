@@ -41,7 +41,7 @@ glm::dvec2 SimFrame::orbit() const
 	return glm::dvec2(param / (1-eccentricity), param / (1+eccentricity));
 }
 
-void SimFrame::freeLeaves(SimFrame* node)
+/*void SimFrame::freeLeaves(SimFrame* node)
 {
 	if(node != nullptr && node->_refCount == 0){
 		SimFrame* prev = node->prev;
@@ -51,3 +51,4 @@ void SimFrame::freeLeaves(SimFrame* node)
 		SimFrame::freeLeaves(prev);
 	}
 }
+*/

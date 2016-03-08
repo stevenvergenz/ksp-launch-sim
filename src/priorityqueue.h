@@ -8,11 +8,12 @@
 class PriorityQueue
 {
 public:
-	PriorityQueue(int capacity = 10000);
+	PriorityQueue(int capacity = 4e6);
 	~PriorityQueue();
 
-	void push(SimFrame* item);
-	SimFrame* pop();
+	SimFrame* push(SimFrame* item);
+	SimFrame* getBest();
+	void reprioritize();
 
 	bool isEmpty();
 
@@ -22,6 +23,9 @@ private:
 	int count;
 
 	void resizeHeap(int newCapacity);
+	static bool ABetterThanB(const SimFrame* a, const SimFrame* b);
+	static void quickSort(SimFrame **arr, int lo, int hi);
+	static const SimFrame* median(const SimFrame* a, const SimFrame* b, const SimFrame* c);
 };
 
 #endif // PRIORITYQUEUE_H

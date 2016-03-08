@@ -10,10 +10,9 @@ Simulator::~Simulator()
 
 }
 
-void Simulator::run()
+/*void Simulator::run()
 {
 	PriorityQueue fringe;
-	QList<SimFrame*> terminalFrames;
 	double spentDV = 0, forwardDV = 100000;
 
 	// set up initial state
@@ -111,9 +110,50 @@ void Simulator::run()
 	}
 
 	emit done(bestFrame);
+}*/
+
+void Simulator::run()
+{
+	PriorityQueue queue;
+
+	// set up initial state
+	SimFrame* frame = new SimFrame();
+	frame->config = config;
+	frame->currentStage = 0;
+	frame->currentMass = config->stages[0].totalMass;
+
+	frame->time = 0.0;
+	frame->position = glm::dvec2(0.0, config->body.radius);
+	frame->velocity = glm::dvec2(2*PI*config->body.radius/config->body.rotationalPeriod, 0.0);
+	frame->orientation = glm::dvec2(0, 1);
+	frame->throttle = 0.0;
+	frame->score = evaluateFrame(frame);
+
+	queue.push(frame);
+
+	// while frames in buffer
+
+		// get deepest, cheapest frame with at least one unexplored successor
+
+		// if frame is goal node
+			// break and return
+		// else if no successors possible, or entire buffer taken by frame ancestors
+			// update frame score to infinity
+			// continue
+
+		// if no successor list, generate successors for frame
+		// save references in frame
+
+		// if out of memory
+			// forget lowest priority frame
+			// store forgotten frame score in parent
+		// add some unbuffered successor to buffer
+
+		// if last successor just added
+			// update score with min(cheapest successor, bestForgotten)
+			// recursively update ancestors as needed
+			// revalidate buffer
 }
-
-
 
 SimFrame* Simulator::computeNextFrame(SimFrame *prevFrame, glm::dvec2 orientation, double throttle)
 {
