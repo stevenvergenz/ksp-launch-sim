@@ -1,6 +1,6 @@
 #include "simframe.h"
 
-SimFrame::SimFrame() : config(nullptr), prev(nullptr)
+SimFrame::SimFrame() : config(nullptr), deltaVSpent(0), score(INFINITY), bestForgotten(INFINITY), prev(nullptr), _refCount(0)
 {
 
 }

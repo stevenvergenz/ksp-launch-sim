@@ -26,7 +26,7 @@ public:
 
 public slots:
 	void startSim();
-	void log(const SimFrame* frame = nullptr, double score = 0);
+	void log(const SimFrame* frame = nullptr);
 	void analyseResults(const SimFrame* bestResult);
 
 private:

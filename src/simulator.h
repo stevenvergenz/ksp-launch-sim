@@ -27,7 +27,7 @@ public:
 	void run();
 
 signals:
-	void update(const SimFrame* updateFrame, double score);
+	void update(const SimFrame* updateFrame);
 	void done(const SimFrame* bestResult);
 
 private:

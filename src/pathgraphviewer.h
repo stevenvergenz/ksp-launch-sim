@@ -17,7 +17,7 @@ class PathGraphViewer : public QWidget
 public:
 	explicit PathGraphViewer(QWidget *parent = 0);
 	~PathGraphViewer();
-	void addBranch(QPointF from, QPointF to);
+	void setPath(QPolygonF path);
 	void clear();
 
 public slots:
@@ -27,7 +27,7 @@ private:
 	Ui::PathGraphViewer *ui;
 
 	QPointF min, max;
-	QList<QLineF> paths;
+	QPolygonF path;
 };
 
 #endif // PATHGRAPHVIEWER_H

@@ -29,7 +29,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	config->params.timeResolution = 5;
 	config->params.searchDepth = 2;
 	config->params.throttleStep = 0.2;
-	config->params.radialStep = PI/12;
+	config->params.radialStep = PI/8;
 
 	config->goal.desiredApoapsis = 100000;
 	config->goal.desiredPeriapsis = 100000;
@@ -43,7 +43,7 @@ void MainWindow::startSim()
 		sim = new Simulator(config);
 
 		// connect slots
-		connect(sim, SIGNAL(update(const SimFrame*, double)), this, SLOT(log(const SimFrame*, double)));
+		connect(sim, SIGNAL(update(const SimFrame*)), this, SLOT(log(const SimFrame*)));
 		connect(sim, SIGNAL(done(const SimFrame*)), this, SLOT(analyseResults(const SimFrame*)));
 
 		QThreadPool::globalInstance()->start(sim);
@@ -56,7 +56,7 @@ void MainWindow::startSim()
 	}
 }
 
-void MainWindow::log(const SimFrame * frame, double score)
+void MainWindow::log(const SimFrame * frame)
 {
 	/*QString timestamp = QString("[%1] ").arg(QDateTime::currentDateTime().toString("hh:mm"));
 
@@ -83,8 +83,27 @@ void MainWindow::log(const SimFrame * frame, double score)
 		ui->pathViewer->addVertex(QPointF(frame->position.x, frame->position.y));
 	}*/
 
-	if(frame->prev != nullptr)
-		ui->pathViewer->addBranch( QPointF(frame->prev->position.x, frame->prev->position.y), QPointF(frame->position.x, frame->position.y) );
+	QPolygonF path;
+
+	const SimFrame* temp = frame;
+	while(temp != nullptr){
+		path << QPointF(temp->position.x, temp->position.y);
+		temp = temp->prev;
+	}
+	ui->pathViewer->setPath(path);
+
+	QString timestamp = QString("[%1] ").arg(QDateTime::currentDateTime().toString("hh:mm"));
+	glm::dvec2 orbit = frame->orbit();
+	QString str = QString("[%1] %2m | %3m/s | %4m/s ∆v | %5km x %6km")
+		.arg(frame->time, 4, 'f', 2)
+		.arg(glm::length(frame->position) - frame->config->body.radius, 4, 'f', 2)
+		.arg(glm::length(frame->velocity), 4, 'f', 2)
+		.arg(frame->deltaVVac(), 2, 'f', 2)
+		.arg((orbit.x - frame->config->body.radius)/1000, 3, 'f', 1)
+		.arg((orbit.y - frame->config->body.radius)/1000, 3, 'f', 1);
+	ui->textEdit->append(timestamp + str);
+
+	delete frame;
 }
 
 void MainWindow::analyseResults(const SimFrame *bestResult)

@@ -31,15 +31,9 @@ void PathGraph::paintEvent(QPaintEvent* event)
 	p.drawLine(view.map(QPoint(-100000,0)), view.map(QPoint(100000,0)));
 	p.drawLine(view.map(QPoint(0,-100000)), view.map(QPoint(0,100000)));
 
-	// draw lines
+	// draw launch path
 	p.setPen(Qt::black);
-	auto positions = *(this->paths);
-	for(int i=1; i<positions.length(); ++i)
-	{
-		//p.drawLine( view.map(positions[i]) );
-		if( event->rect().contains( view.map(positions[i].p2().toPoint()) ) )
-			p.drawPoint( view.map(positions[i].p2()) );
-	}
+	p.drawPolyline(view.map(*path));
 
 	// draw background
 	p.setPen(Qt::gray);
@@ -72,6 +66,6 @@ void PathGraph::resizeEvent(QResizeEvent *event){
 	setViewWindow(viewBox, false);
 }
 
-void PathGraph::setPathList(const QList<QLineF> * const list){
-	paths = list;
+void PathGraph::setPathPtr(const QPolygonF* const path){
+	this->path = path;
 }

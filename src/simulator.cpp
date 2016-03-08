@@ -14,9 +14,7 @@ void Simulator::run()
 {
 	PriorityQueue fringe;
 	QList<SimFrame*> terminalFrames;
-
-	SimFrame* bestFrame = nullptr;
-	double bestScore = 100000;
+	double spentDV = 0, forwardDV = 100000;
 
 	// set up initial state
 	SimFrame* frame = new SimFrame();
@@ -29,18 +27,13 @@ void Simulator::run()
 	frame->velocity = glm::dvec2(2*PI*config->body.radius/config->body.rotationalPeriod, 0.0);
 	frame->orientation = glm::dvec2(0, 1);
 	frame->throttle = 0.0;
-	frame->deltaVSpent = 0.0;
+	frame->score = evaluateFrame(frame);
 
-	frame->prev = nullptr;
-	frame->_refCount = 0;
-
-	fringe.push(frame, evaluateFrame(frame));
+	fringe.push(frame);
 
 	while(!abort && !fringe.isEmpty())
 	{
-		double score;
-		frame = fringe.pop(&score);
-		emit update(frame, score);
+		frame = fringe.pop();
 
 		auto orbit = frame->orbit();
 		bool goalMet =
@@ -48,17 +41,26 @@ void Simulator::run()
 			&& fabs(orbit.y - frame->config->body.radius - frame->config->goal.desiredPeriapsis) < 1000;
 
 		// update latest best path
-		if(goalMet && score < bestScore){
-			bestFrame = frame;
-			bestScore = score;
+		double dvToGo = 0;
+		if(frame->deltaVSpent > spentDV && (dvToGo = evaluateFrame(frame)) < forwardDV){
+			printf("Best score updated\n");
+			spentDV = frame->deltaVSpent;
+			forwardDV = dvToGo;
+
+			SimFrame* copy = new SimFrame();
+			memcpy(copy, frame, sizeof(SimFrame));
+			emit update(copy);
 		}
 
 		// check for terminal conditions
 		if(frame->time > frame->config->params.duration
-			|| frame->deltaVVac() == 0
+			|| frame->deltaVVac() < evaluateFrame(frame)
 			|| glm::length(frame->position) < frame->config->body.radius
-			|| goalMet
 		){
+			SimFrame::freeLeaves(frame);
+			continue;
+		}
+		else if(goalMet){
 			terminalFrames.push_back(frame);
 			continue;
 		}
@@ -71,8 +73,8 @@ void Simulator::run()
 		next->throttle = 0;
 		next->prev = frame;
 		frame->_refCount++;
-		next->_refCount = 0;
-		fringe.push( next, frame->deltaVSpent + evaluateFrame(next) );
+		next->score = next->deltaVSpent + evaluateFrame(next);
+		fringe.push(next);
 
 		// for each orientation
 		for(double angle=0.0; angle < 2*PI; angle += frame->config->params.radialStep)
@@ -88,18 +90,25 @@ void Simulator::run()
 				next->throttle = throttle;
 				next->prev = frame;
 				frame->_refCount++;
-				next->_refCount = 0;
-				fringe.push( next, frame->deltaVSpent + evaluateFrame(next) );
+				next->score = next->deltaVSpent + evaluateFrame(next);
+
+				fringe.push(next);
 			}
 		}
 
 	}
 
 	// clean up suboptimal paths
+	SimFrame* bestFrame;;
 	for(int i=0; i<terminalFrames.length(); i++)
-		if(terminalFrames[i] != bestFrame)
+	{
+		if(terminalFrames[i]->score < bestFrame->score){
+			SimFrame::freeLeaves(bestFrame);
+			bestFrame = terminalFrames[i];
+		}
+		else
 			SimFrame::freeLeaves(terminalFrames[i]);
-
+	}
 
 	emit done(bestFrame);
 }

@@ -4,12 +4,6 @@
 #include <cstring>
 #include "simframe.h"
 
-struct PQueueItem
-{
-	SimFrame* item;
-	double score;
-};
-
 
 class PriorityQueue
 {
@@ -17,13 +11,13 @@ public:
 	PriorityQueue(int capacity = 10000);
 	~PriorityQueue();
 
-	void push(SimFrame* item, double score);
-	SimFrame* pop(double* score = nullptr);
+	void push(SimFrame* item);
+	SimFrame* pop();
 
 	bool isEmpty();
 
 private:
-	PQueueItem* heap;
+	SimFrame** heap;
 	int capacity;
 	int count;
 

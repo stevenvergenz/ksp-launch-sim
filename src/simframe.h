@@ -30,6 +30,8 @@ public:
 
 	double deltaVSpent;
 
+	double score;
+	double bestForgotten;
 	SimFrame* prev;
 	int _refCount;
 
