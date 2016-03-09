@@ -1,8 +1,19 @@
 #include "simframe.h"
 
-SimFrame::SimFrame() : config(nullptr), deltaVSpent(0), score(INFINITY), bestForgotten(INFINITY), prev(nullptr), _refCount(0)
+SimFrame::SimFrame()
+	: config(nullptr), deltaVSpent(0), score(INFINITY), prev(nullptr), bestForgotten(INFINITY), next(nullptr),
+	  nextCount(0), nextConsideredIndex(0)
 {
+	for(int i=0; i<128; i++){
+		nextBuffered[i] = '\0';
+	}
+}
 
+SimFrame* SimFrame::clone()
+{
+	SimFrame* copy = new SimFrame();
+	memcpy(copy, this, sizeof(SimFrame));
+	return copy;
 }
 
 double SimFrame::deltaVVac() const
@@ -40,15 +51,3 @@ glm::dvec2 SimFrame::orbit() const
 	// {x: apoapsis, y: periapsis}
 	return glm::dvec2(param / (1-eccentricity), param / (1+eccentricity));
 }
-
-/*void SimFrame::freeLeaves(SimFrame* node)
-{
-	if(node != nullptr && node->_refCount == 0){
-		SimFrame* prev = node->prev;
-		delete node;
-		if(prev != nullptr)
-			prev->_refCount--;
-		SimFrame::freeLeaves(prev);
-	}
-}
-*/

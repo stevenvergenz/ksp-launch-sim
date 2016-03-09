@@ -2,13 +2,16 @@
 #define PRIORITYQUEUE_H
 
 #include <cstring>
+#include <cstdio>
 #include "simframe.h"
 
 
 class PriorityQueue
 {
 public:
-	PriorityQueue(int capacity = 4e6);
+	static const int CAPACITY = 4e7;
+
+	PriorityQueue();
 	~PriorityQueue();
 
 	SimFrame* push(SimFrame* item);
@@ -19,12 +22,10 @@ public:
 
 private:
 	SimFrame** heap;
-	int capacity;
 	int count;
 
-	void resizeHeap(int newCapacity);
 	static bool ABetterThanB(const SimFrame* a, const SimFrame* b);
-	static void quickSort(SimFrame **arr, int lo, int hi);
+	static void sort(SimFrame **arr, int lo, int hi);
 	static const SimFrame* median(const SimFrame* a, const SimFrame* b, const SimFrame* c);
 };
 

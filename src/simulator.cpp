@@ -132,27 +132,154 @@ void Simulator::run()
 	queue.push(frame);
 
 	// while frames in buffer
-
+	while( !abort && !queue.isEmpty() )
+	{
 		// get deepest, cheapest frame with at least one unexplored successor
+		frame = queue.getBest();
+		//emit update(frame->clone());
+
+		auto orbit = frame->orbit();
+		bool goalMet =
+			fabs(orbit.x - frame->config->body.radius - frame->config->goal.desiredApoapsis) < 1000
+			&& fabs(orbit.y - frame->config->body.radius - frame->config->goal.desiredPeriapsis) < 1000;
 
 		// if frame is goal node
+		if(goalMet){
 			// break and return
+			break;
+		}
 		// else if no successors possible, or entire buffer taken by frame ancestors
+		else if(
+			// timeout
+			frame->time > frame->config->params.duration
+			// wasted too much fuel
+			|| frame->deltaVVac() < evaluateFrame(frame)
+			// crashed
+			|| glm::length(frame->position) < frame->config->body.radius
+			// entire buffer taken by frame ancestors (unlikely)
+			|| frame->time / frame->config->params.timeResolution + 1 >= PriorityQueue::CAPACITY
+		){
 			// update frame score to infinity
-			// continue
+			frame->score = INFINITY;
+			queue.reprioritize();
+			continue;
+		}
 
-		// if no successor list, generate successors for frame
-		// save references in frame
+		// if no successor list
+		if( frame->next == nullptr)
+		{
+			// generate successors for frame
+
+			frame->nextCount = 2*PI/frame->config->params.radialStep * 1/frame->config->params.throttleStep + 1;
+			frame->next = new SimFrame*[frame->nextCount];
+			int i = 0;
+
+			// what if I do nothing?
+			SimFrame* next = computeNextFrame(frame, glm::dvec2(0,1), 0);
+			next->orientation = glm::dvec2(0,1);
+			next->throttle = 0;
+			next->prev = frame;
+			next->score = next->deltaVSpent + evaluateFrame(next);
+			frame->next[i++] = next;
+
+			// for each orientation
+			for(double angle=0.0; angle < 2*PI; angle += frame->config->params.radialStep)
+			{
+				glm::dvec2 orientation(sin(angle), cos(angle));
+
+				// for each throttle position
+				for(double throttle = frame->config->params.throttleStep; throttle <= 1.0; throttle += frame->config->params.throttleStep)
+				{
+					// get resulting state
+					next = computeNextFrame(frame, orientation, throttle);
+					next->orientation = orientation;
+					next->throttle = throttle;
+					next->prev = frame;
+					next->score = next->deltaVSpent + evaluateFrame(next);
+
+					frame->next[i++] = next;
+				}
+			}
+
+		}
+
+		// add some unbuffered successor to buffer
+		SimFrame* successor;
+		bool lastSuccessorAdded = false;
+		if(frame->nextConsideredIndex < frame->nextCount){
+			successor = frame->next[frame->nextConsideredIndex++];
+			lastSuccessorAdded = true;
+		}
+		else {
+			// loop through children to find the first unbuffered successor
+			for(int i=0; i<frame->nextCount; i++){
+				if(frame->nextBuffered[i/8] ^ (1 << (i%8))){
+					successor = frame->next[i];
+					break;
+				}
+			}
+		}
 
 		// if out of memory
-			// forget lowest priority frame
+		SimFrame* trash = queue.push(successor);
+		if(trash != nullptr)
+		{
 			// store forgotten frame score in parent
-		// add some unbuffered successor to buffer
+			trash->prev->bestForgotten = trash->score;
+
+			// forget lowest priority frame
+			if(trash->next != nullptr)
+			{
+				delete trash->next;
+				trash->next = nullptr;
+				trash->nextCount = 0;
+				trash->nextConsideredIndex = 0;
+				trash->bestForgotten = INFINITY;
+				for(int i=0; i<128; i++){
+					trash->nextBuffered[i] = '\0';
+				}
+			}
+		}
 
 		// if last successor just added
-			// update score with min(cheapest successor, bestForgotten)
+		if(lastSuccessorAdded)
+		{
+			SimFrame* temp = frame;
+
 			// recursively update ancestors as needed
+			while(temp != nullptr)
+			{
+				// update score with min(cheapest successor, bestForgotten)
+
+				SimFrame* minChild = temp->next[0];
+				for(int i=1; i<temp->nextCount; i++){
+					if(temp->next[i]->score < minChild->score)
+						minChild = temp->next[i];
+				}
+
+				double bestScore;
+				if(minChild->score < temp->bestForgotten){
+					bestScore = minChild->score;
+				}
+				else {
+					bestScore = temp->bestForgotten;
+				}
+
+				if(bestScore != temp->score){
+					temp->score = bestScore;
+					temp = temp->prev;
+				}
+				else {
+					temp = nullptr;
+				}
+			}
+
 			// revalidate buffer
+			queue.reprioritize();
+		}
+	}
+
+	emit done(frame);
 }
 
 SimFrame* Simulator::computeNextFrame(SimFrame *prevFrame, glm::dvec2 orientation, double throttle)

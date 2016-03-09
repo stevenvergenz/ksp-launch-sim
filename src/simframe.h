@@ -2,6 +2,7 @@
 #define SIMFRAME_H
 
 #include <cmath>
+#include <cstring>
 
 #include "configs.h"
 #include "glm/glm.hpp"
@@ -13,6 +14,7 @@ class SimFrame
 {
 public:
 	SimFrame();
+	SimFrame* clone();
 
 	// sim info
 	SimulationConfig* config;
@@ -31,16 +33,21 @@ public:
 	// fuel expenditure tracking
 	double deltaVSpent;
 
-	// path-finding info
-	double score;
-	double bestForgotten;
-	SimFrame* prev;
-	int _refCount;
-
 	// derived values
 	double deltaVVac() const;
 	double deltaVAtmo() const;
 	glm::dvec2 orbit() const;
+
+	// path-finding info
+	double score;
+	SimFrame* prev;
+
+	// child management
+	double bestForgotten;
+	SimFrame** next;
+	int nextCount;
+	int nextConsideredIndex;
+	unsigned char nextBuffered[128];
 };
 
 #endif // SIMFRAME_H
