@@ -1,9 +1,12 @@
 #include "simframe.h"
 
 SimFrame::SimFrame()
-	: config(nullptr), deltaVSpent(0), score(INFINITY), prev(nullptr), bestForgotten(INFINITY), next(nullptr),
+	: config(nullptr), deltaVSpent(0), prev(nullptr), next(nullptr),
 	  nextCount(0), nextConsideredIndex(0)
 {
+	score = std::numeric_limits<double>::max();
+	bestForgotten = std::numeric_limits<double>::max();
+
 	for(int i=0; i<128; i++){
 		nextBuffered[i] = '\0';
 	}

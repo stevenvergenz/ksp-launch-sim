@@ -115,6 +115,7 @@ Simulator::~Simulator()
 void Simulator::run()
 {
 	PriorityQueue queue;
+	unsigned int processCount;
 
 	// set up initial state
 	SimFrame* frame = new SimFrame();
@@ -143,6 +144,14 @@ void Simulator::run()
 			fabs(orbit.x - frame->config->body.radius - frame->config->goal.desiredApoapsis) < 1000
 			&& fabs(orbit.y - frame->config->body.radius - frame->config->goal.desiredPeriapsis) < 1000;
 
+		// update latest best path
+
+		if(++processCount % 100000 == 0){
+			SimFrame* copy = new SimFrame();
+			memcpy(copy, frame, sizeof(SimFrame));
+			emit update(copy);
+		}
+
 		// if frame is goal node
 		if(goalMet){
 			// break and return
@@ -160,7 +169,7 @@ void Simulator::run()
 			|| frame->time / frame->config->params.timeResolution + 1 >= PriorityQueue::CAPACITY
 		){
 			// update frame score to infinity
-			frame->score = INFINITY;
+			frame->score = std::numeric_limits<double>::max();
 			queue.reprioritize();
 			continue;
 		}
@@ -208,7 +217,8 @@ void Simulator::run()
 		bool lastSuccessorAdded = false;
 		if(frame->nextConsideredIndex < frame->nextCount){
 			successor = frame->next[frame->nextConsideredIndex++];
-			lastSuccessorAdded = true;
+			if(frame->nextConsideredIndex == frame->nextCount)
+				lastSuccessorAdded = true;
 		}
 		else {
 			// loop through children to find the first unbuffered successor
@@ -230,7 +240,7 @@ void Simulator::run()
 			// forget lowest priority frame
 			if(trash->next != nullptr)
 			{
-				delete trash->next;
+				delete[] trash->next;
 				trash->next = nullptr;
 				trash->nextCount = 0;
 				trash->nextConsideredIndex = 0;

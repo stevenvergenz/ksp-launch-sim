@@ -9,7 +9,7 @@
 class PriorityQueue
 {
 public:
-	static const int CAPACITY = 4e7;
+	static const int CAPACITY = 4e8;
 
 	PriorityQueue();
 	~PriorityQueue();

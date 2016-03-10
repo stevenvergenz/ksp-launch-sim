@@ -2,7 +2,7 @@
 
 
 PriorityQueue::PriorityQueue()
-	: count(0)
+	: count(0), heap(nullptr)
 {
 	heap = new SimFrame*[CAPACITY+1];
 }
@@ -12,7 +12,7 @@ PriorityQueue::~PriorityQueue()
 	for(int i=1; i<=count; i++){
 		delete heap[i];
 	}
-	delete heap;
+	delete[] heap;
 }
 
 SimFrame* PriorityQueue::push(SimFrame *item)
@@ -26,7 +26,7 @@ SimFrame* PriorityQueue::push(SimFrame *item)
 	else
 		heap[++count] = item;
 
-	printf("Heap usage: %d of %d\n", count, CAPACITY);
+	//printf("Heap usage: %d of %d\n", count, CAPACITY);
 
 	// bubble up as necessary
 	int i = count;
@@ -65,6 +65,10 @@ bool PriorityQueue::ABetterThanB(const SimFrame *a, const SimFrame *b)
 	if(!aHasUnbufferedSuccessors)
 		aHasUnbufferedSuccessors = a->nextBuffered[i] ^ ((1 << (a->nextCount%8)) - 1);
 
+	bool scoreRanking = a->score < b->score;
+	bool timeRanking = a->score == b->score && a->time > b->time;
+	bool successorsRanking = a->score == b->score && a->time == b->time && aHasUnbufferedSuccessors;
+
 	// rank by score
 	return (a->score < b->score)
 		// then by depth
@@ -98,7 +102,7 @@ void PriorityQueue::sort(SimFrame** arr, int lo, int hi)
 		for(int i=lo+1; i<hi; i++)
 		{
 			int j=i;
-			while( ABetterThanB(arr[j], arr[j-1]) && j>lo+1 )
+			while( j>lo && ABetterThanB(arr[j], arr[j-1]) )
 			{
 				auto temp = arr[j-1];
 				arr[j-1] = arr[j];
