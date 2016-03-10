@@ -3,6 +3,8 @@
 
 #include <cstring>
 #include <cstdio>
+#include <cassert>
+
 #include "simframe.h"
 
 

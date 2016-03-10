@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
+
 
 int ABetterThanB(int a, int b)
 {
@@ -25,8 +27,13 @@ const int median(const int a, const int b, const int c)
 }
 
 
-void sort(int* arr, int lo, int hi)
+void sort(int* arr, int lo, int hi, int depth)
 {
+	/*if(depth > 7){
+		printf("Aborted\n");
+		return;
+	}*/
+
 	// base case (array length 0 or 1)
 	if(hi-lo < 2){
 		//printf("%d to %d already sorted\n", lo, hi);
@@ -49,7 +56,7 @@ void sort(int* arr, int lo, int hi)
 			}
 		}
 
-		/*for(int i=0; i<20; i++)
+		/*for(int i=lo; i<hi; i++)
 			printf("%2d ", arr[i]);
 		printf("\n");*/
 	}
@@ -69,8 +76,15 @@ void sort(int* arr, int lo, int hi)
 		//printf("pivot from %d to %d: %d\n", lo, hi, pivot);
 
 		int i = lo;
-		for(int j=lo; j<hi; j++)
+		for(int j=lo; j<hi-1; j++)
 		{
+			// move pivot to end for now if it's found
+			if( arr[j] == pivot ){
+				int temp = arr[hi-1];
+				arr[hi-1] = arr[j];
+				arr[j] = temp;
+			}
+
 			if( ABetterThanB(arr[j], pivot) ){
 				int temp = arr[i];
 				arr[i] = arr[j];
@@ -79,32 +93,37 @@ void sort(int* arr, int lo, int hi)
 			}
 		}
 
-		/*for(int i=0; i<20; i++)
+		int temp = arr[i];
+		arr[i] = arr[hi-1];
+		arr[hi-1] = temp;
+
+		/*for(int i=lo; i<hi; i++)
 			printf("%2d ", arr[i]);
 		printf("\n");*/
 
-		sort(arr, lo, i);
-		sort(arr, i, hi);
+		sort(arr, lo, i, depth+1);
+		return sort(arr, i+1, hi, depth+1);
 	}
 
 }
 
 int main()
 {
-	const int LENGTH = 50;
+	srand(time(0));
+	const int LENGTH = 81;
 	int arr[LENGTH];
 
 	int count, i, j;
 	for(count=0; count<10; count++)
 	{
-		for(i=0; i<LENGTH; i++)
+		printf("[");
+		for(i=0; i<LENGTH; i++){
 			arr[i] = rand() % 100;
+			printf("%2d, ", arr[i]);
+		}
+		printf("]\n");
 
-		for(i=0; i<LENGTH; i++)
-			printf("%2d ", arr[i]);
-		printf("\n");
-
-		sort(arr, 0, LENGTH);
+		sort(arr, 0, LENGTH, 0);
 
 		for(i=0; i<LENGTH; i++){
 			printf("%2d ", arr[i]);

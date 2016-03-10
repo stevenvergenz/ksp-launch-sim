@@ -124,12 +124,13 @@ void Simulator::run()
 	frame->currentMass = config->stages[0].totalMass;
 
 	frame->time = 0.0;
-	frame->position = glm::dvec2(0.0, config->body.radius);
-	frame->velocity = glm::dvec2(2*PI*config->body.radius/config->body.rotationalPeriod, 0.0);
+	frame->position = glm::dvec2(0.0, config->body.radius+80000);
+	frame->velocity = glm::dvec2(2278.9/*2*PI*config->body.radius/config->body.rotationalPeriod*/, 0.0);
 	frame->orientation = glm::dvec2(0, 1);
 	frame->throttle = 0.0;
 	frame->score = evaluateFrame(frame);
 
+	printf("%lf x %lf\n", frame->orbit().x, frame->orbit().y);
 	queue.push(frame);
 
 	// while frames in buffer
@@ -146,7 +147,7 @@ void Simulator::run()
 
 		// update latest best path
 
-		if(++processCount % 100000 == 0){
+		if(++processCount % 10 == 0){
 			SimFrame* copy = new SimFrame();
 			memcpy(copy, frame, sizeof(SimFrame));
 			emit update(copy);
@@ -168,8 +169,10 @@ void Simulator::run()
 			// entire buffer taken by frame ancestors (unlikely)
 			|| frame->time / frame->config->params.timeResolution + 1 >= PriorityQueue::CAPACITY
 		){
-			// update frame score to infinity
+			// update frame score to infinity and propagate
 			frame->score = std::numeric_limits<double>::max();
+			if(frame->prev->nextConsideredIndex == frame->prev->nextCount)
+				propagateScore(frame->prev);
 			queue.reprioritize();
 			continue;
 		}
@@ -222,6 +225,7 @@ void Simulator::run()
 		}
 		else {
 			// loop through children to find the first unbuffered successor
+			successor = nullptr;
 			for(int i=0; i<frame->nextCount; i++){
 				if(frame->nextBuffered[i/8] ^ (1 << (i%8))){
 					successor = frame->next[i];
@@ -254,42 +258,63 @@ void Simulator::run()
 		// if last successor just added
 		if(lastSuccessorAdded)
 		{
-			SimFrame* temp = frame;
-
-			// recursively update ancestors as needed
-			while(temp != nullptr)
-			{
-				// update score with min(cheapest successor, bestForgotten)
-
-				SimFrame* minChild = temp->next[0];
-				for(int i=1; i<temp->nextCount; i++){
-					if(temp->next[i]->score < minChild->score)
-						minChild = temp->next[i];
-				}
-
-				double bestScore;
-				if(minChild->score < temp->bestForgotten){
-					bestScore = minChild->score;
-				}
-				else {
-					bestScore = temp->bestForgotten;
-				}
-
-				if(bestScore != temp->score){
-					temp->score = bestScore;
-					temp = temp->prev;
-				}
-				else {
-					temp = nullptr;
-				}
-			}
-
+			propagateScore(frame);
 			// revalidate buffer
 			queue.reprioritize();
 		}
 	}
 
-	emit done(frame);
+	// copy best path to new flight
+	SimFrame* head = new SimFrame();
+	SimFrame* cur = head;
+	while(cur != nullptr)
+	{
+		cur->config = frame->config;
+		cur->time = frame->time;
+		cur->currentMass = frame->currentMass;
+		cur->currentStage = frame->currentStage;
+		cur->position = frame->position;
+		cur->velocity = frame->velocity;
+		cur->orientation = frame->orientation;
+		cur->throttle = frame->throttle;
+		cur->deltaVSpent = frame->deltaVSpent;
+
+		if(frame->prev != nullptr){
+			cur->prev = new SimFrame();
+		}
+		else {
+			cur->prev = nullptr;
+		}
+		cur = cur->prev;
+		frame = frame->prev;
+	}
+	emit done(head);
+}
+
+void Simulator::propagateScore(SimFrame *frame)
+{
+	if(frame == nullptr || frame->next == nullptr)
+		return;
+
+	// update score with min(cheapest successor, bestForgotten)
+	SimFrame* minChild = frame->next[0];
+	for(int i=1; i<frame->nextCount; i++){
+		if(frame->next[i]->score < minChild->score)
+			minChild = frame->next[i];
+	}
+
+	double bestScore;
+	if(minChild->score < frame->bestForgotten){
+		bestScore = minChild->score;
+	}
+	else {
+		bestScore = frame->bestForgotten;
+	}
+
+	if(bestScore != frame->score){
+		frame->score = bestScore;
+		return propagateScore(frame->prev);
+	}
 }
 
 SimFrame* Simulator::computeNextFrame(SimFrame *prevFrame, glm::dvec2 orientation, double throttle)

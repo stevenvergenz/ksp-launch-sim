@@ -26,9 +26,9 @@ MainWindow::MainWindow(QWidget *parent) :
 	config->body = KerbolSystem::Kerbin;
 
 	config->params.duration = 2000;
-	config->params.timeResolution = 5;
+	config->params.timeResolution = 0.1;
 	config->params.searchDepth = 2;
-	config->params.throttleStep = 0.2;
+	config->params.throttleStep = 0.5;
 	config->params.radialStep = PI/8;
 
 	config->goal.desiredApoapsis = 100000;
@@ -94,13 +94,11 @@ void MainWindow::log(const SimFrame * frame)
 
 	QString timestamp = QString("[%1] ").arg(QDateTime::currentDateTime().toString("hh:mm"));
 	glm::dvec2 orbit = frame->orbit();
-	QString str = QString("[%1] %2m | %3m/s | %4m/s ∆v | %5km x %6km")
+	QString str = QString("[%1] %2m | %3m/s | %4m/s est. ∆v")
 		.arg(frame->time, 4, 'f', 2)
 		.arg(glm::length(frame->position) - frame->config->body.radius, 4, 'f', 2)
 		.arg(glm::length(frame->velocity), 4, 'f', 2)
-		.arg(frame->deltaVVac(), 2, 'f', 2)
-		.arg((orbit.x - frame->config->body.radius)/1000, 3, 'f', 1)
-		.arg((orbit.y - frame->config->body.radius)/1000, 3, 'f', 1);
+		.arg(frame->score, 2, 'f', 2);
 	ui->textEdit->append(timestamp + str);
 
 	delete frame;
@@ -111,6 +109,32 @@ void MainWindow::analyseResults(const SimFrame *bestResult)
 	ui->textEdit->append(QString("[%1] Simulation complete")
 		.arg(QDateTime::currentDateTime().toString("hh:mm"))
 	);
+
+	// write flight data to file
+	std::ofstream output;
+	output.open("flightdata.csv");
+	output << "time,altitudeDelta,velocityDelta,longitude,throttle,orientation,deltaV,apogee,perigee" << std::endl;
+
+	while(bestResult != nullptr)
+	{
+		double angle = acos( glm::dot(bestResult->orientation, glm::dvec2(bestResult->position.y, -bestResult->position.x))
+			/ glm::length(bestResult->position) ) * 180/PI;
+
+		double mu = G * config->body.mass;
+		double energy = pow(glm::length(bestResult->velocity),2) / 2 - mu/glm::length(bestResult->position);
+
+		output << bestResult->time << ",";
+		output << glm::length(bestResult->position) - bestResult->config->body.radius - 80000 << ",";
+		output << glm::length(bestResult->velocity) - 2278.9 << ",";
+		output << atan2(bestResult->position.x, bestResult->position.y)*180/PI << ",";
+		output << bestResult->throttle << ",";
+		output << angle << ",";
+		output << bestResult->deltaVSpent << ",";
+		output << bestResult->orbit().x - bestResult->config->body.radius << ",";
+		output << bestResult->orbit().y - bestResult->config->body.radius << std::endl;
+		bestResult = bestResult->prev;
+	}
+	output.close();
 
 	sim = nullptr;
 }

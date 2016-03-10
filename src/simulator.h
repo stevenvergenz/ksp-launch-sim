@@ -36,6 +36,7 @@ private:
 	static SimFrame* computeNextFrame(SimFrame* prevFrame, glm::dvec2 orientation = glm::dvec2(), double throttle = 1.0);
 	static double evaluateFrame(SimFrame* frame);
 	static double tempFromHeight(double height);
+	static void propagateScore(SimFrame* frame);
 };
 
 #endif // SIMULATOR_H

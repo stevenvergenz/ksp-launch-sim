@@ -5,6 +5,8 @@
 #include <QThreadPool>
 #include <QDateTime>
 #include <cmath>
+#include <iostream>
+#include <fstream>
 
 #include "glm/glm.hpp"
 #include "glm/vec2.hpp"

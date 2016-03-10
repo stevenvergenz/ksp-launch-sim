@@ -2,21 +2,23 @@
 
 
 PriorityQueue::PriorityQueue()
-	: count(0), heap(nullptr)
+	: heap(nullptr), count(0)
 {
 	heap = new SimFrame*[CAPACITY+1];
 }
 
 PriorityQueue::~PriorityQueue()
 {
-	for(int i=1; i<=count; i++){
+	/*for(int i=1; i<=count; i++){
 		delete heap[i];
 	}
-	delete[] heap;
+	delete[] heap;*/
 }
 
 SimFrame* PriorityQueue::push(SimFrame *item)
 {
+	assert(item != nullptr);
+
 	// drop as necessary
 	SimFrame* dump = nullptr;
 	if(CAPACITY < count+1){
@@ -48,39 +50,40 @@ SimFrame* PriorityQueue::getBest()
 {
 	if(count == 0)
 		return nullptr;
-	else
+	else {
+		//printf("%lf\n", heap[1]->deltaVSpent);
 		return heap[1];
+	}
 }
 
 bool PriorityQueue::ABetterThanB(const SimFrame *a, const SimFrame *b)
 {
-	bool aHasUnbufferedSuccessors = false;
+	bool bHasUnbufferedSuccessors = false;
 	int i;
-	for(i=0; i<a->nextCount/8; i++){
-		if(a->nextBuffered[i] < 0xff){
-			aHasUnbufferedSuccessors = true;
+	for(i=0; i<b->nextCount/8; i++){
+		if(b->nextBuffered[i] < 0xff){
+			bHasUnbufferedSuccessors = true;
 			break;
 		}
 	}
-	if(!aHasUnbufferedSuccessors)
-		aHasUnbufferedSuccessors = a->nextBuffered[i] ^ ((1 << (a->nextCount%8)) - 1);
-
-	bool scoreRanking = a->score < b->score;
-	bool timeRanking = a->score == b->score && a->time > b->time;
-	bool successorsRanking = a->score == b->score && a->time == b->time && aHasUnbufferedSuccessors;
+	if(!bHasUnbufferedSuccessors)
+		bHasUnbufferedSuccessors = b->nextBuffered[i] ^ ((1 << (b->nextCount%8)) - 1);
 
 	// rank by score
 	return (a->score < b->score)
 		// then by depth
 		|| (a->score == b->score && a->time > b->time)
 		// then by viable successor count
-		|| (a->score == b->score && a->time == b->time && aHasUnbufferedSuccessors);
+		|| (a->score == b->score && a->time == b->time && !bHasUnbufferedSuccessors);
 }
 
 // just sort the array, results in a new heap
 void PriorityQueue::reprioritize()
 {
 	sort(heap, 1, count+1);
+	/*for(int i=1; i<=count && i <=5; i++)
+		printf("(%lf, %lf) ", heap[i]->time, heap[i]->score);*/
+	//printf("Of %d\n", count);
 }
 
 bool PriorityQueue::isEmpty()
@@ -91,6 +94,8 @@ bool PriorityQueue::isEmpty()
 // sort arr from [lo,hi)
 void PriorityQueue::sort(SimFrame** arr, int lo, int hi)
 {
+	assert(lo<=hi);
+
 	// base case (array length 0 or 1)
 	if(hi-lo < 2){
 		return;
@@ -125,8 +130,15 @@ void PriorityQueue::sort(SimFrame** arr, int lo, int hi)
 		);
 
 		int i = lo;
-		for(int j=lo; j<hi; j++)
+		for(int j=lo; j<hi-1; j++)
 		{
+			// move pivot to end for now
+			if( arr[j] == pivot ){
+				auto temp = arr[hi-1];
+				arr[hi-1] = arr[j];
+				arr[j] = temp;
+			}
+
 			if( ABetterThanB(arr[j], pivot) ){
 				auto temp = arr[i];
 				arr[i] = arr[j];
@@ -135,8 +147,12 @@ void PriorityQueue::sort(SimFrame** arr, int lo, int hi)
 			}
 		}
 
+		auto temp = arr[i];
+		arr[i] = arr[hi-1];
+		arr[hi-1] = temp;
+
 		sort(arr, lo, i);
-		return sort(arr, i, hi);
+		return sort(arr, i+1, hi);
 	}
 }
 
