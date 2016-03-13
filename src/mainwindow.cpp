@@ -26,7 +26,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	config->body = KerbolSystem::Kerbin;
 
 	config->params.duration = 2000;
-	config->params.timeResolution = 0.1;
+	config->params.timeResolution = 0.01;
 	config->params.searchDepth = 2;
 	config->params.throttleStep = 0.5;
 	config->params.radialStep = PI/8;

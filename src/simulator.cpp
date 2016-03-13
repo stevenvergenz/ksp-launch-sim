@@ -147,7 +147,7 @@ void Simulator::run()
 
 		// update latest best path
 
-		if(++processCount % 10 == 0){
+		if(++processCount % 1000 == 0){
 			SimFrame* copy = new SimFrame();
 			memcpy(copy, frame, sizeof(SimFrame));
 			emit update(copy);
@@ -293,27 +293,30 @@ void Simulator::run()
 
 void Simulator::propagateScore(SimFrame *frame)
 {
-	if(frame == nullptr || frame->next == nullptr)
-		return;
+	while (frame != nullptr && frame->next != nullptr)
+	{
+		// update score with min(cheapest successor, bestForgotten)
+		SimFrame* minChild = frame->next[0];
+		for(int i=1; i<frame->nextCount; i++){
+			if(frame->next[i]->score < minChild->score)
+				minChild = frame->next[i];
+		}
 
-	// update score with min(cheapest successor, bestForgotten)
-	SimFrame* minChild = frame->next[0];
-	for(int i=1; i<frame->nextCount; i++){
-		if(frame->next[i]->score < minChild->score)
-			minChild = frame->next[i];
-	}
+		double bestScore;
+		if(minChild->score < frame->bestForgotten){
+			bestScore = minChild->score;
+		}
+		else {
+			bestScore = frame->bestForgotten;
+		}
 
-	double bestScore;
-	if(minChild->score < frame->bestForgotten){
-		bestScore = minChild->score;
-	}
-	else {
-		bestScore = frame->bestForgotten;
-	}
-
-	if(bestScore != frame->score){
-		frame->score = bestScore;
-		return propagateScore(frame->prev);
+		if(bestScore != frame->score){
+			frame->score = bestScore;
+			frame = frame->prev;
+		}
+		else {
+			frame = nullptr;
+		}
 	}
 }
 
