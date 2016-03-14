@@ -25,8 +25,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	config->stageCount = 1;
 	config->body = KerbolSystem::Kerbin;
 
-	config->params.duration = 2000;
-	config->params.timeResolution = 0.01;
+	config->params.duration = 20;
+	config->params.timeResolution = 1;
 	config->params.searchDepth = 2;
 	config->params.throttleStep = 0.5;
 	config->params.radialStep = PI/8;
@@ -94,10 +94,10 @@ void MainWindow::log(const SimFrame * frame)
 
 	QString timestamp = QString("[%1] ").arg(QDateTime::currentDateTime().toString("hh:mm"));
 	glm::dvec2 orbit = frame->orbit();
-	QString str = QString("[%1] %2m | %3m/s | %4m/s est. ∆v")
+	QString str = QString("[%1] %2km x %3km | %4m/s est. ∆v total")
 		.arg(frame->time, 4, 'f', 2)
-		.arg(glm::length(frame->position) - frame->config->body.radius, 4, 'f', 2)
-		.arg(glm::length(frame->velocity), 4, 'f', 2)
+		.arg((frame->orbit().x - frame->config->body.radius)/1000, 5, 'f', 1)
+		.arg((frame->orbit().y - frame->config->body.radius)/1000, 5, 'f', 1)
 		.arg(frame->score, 2, 'f', 2);
 	ui->textEdit->append(timestamp + str);
 
@@ -106,8 +106,10 @@ void MainWindow::log(const SimFrame * frame)
 
 void MainWindow::analyseResults(const SimFrame *bestResult)
 {
-	ui->textEdit->append(QString("[%1] Simulation complete")
+	ui->textEdit->append(QString("[%1] Simulation complete, final orbit %2km x %3km")
 		.arg(QDateTime::currentDateTime().toString("hh:mm"))
+		.arg((bestResult->orbit().x - bestResult->config->body.radius)/1000, 5, 'f', 1)
+		.arg((bestResult->orbit().y - bestResult->config->body.radius)/1000, 5, 'f', 1)
 	);
 
 	// write flight data to file
@@ -124,8 +126,8 @@ void MainWindow::analyseResults(const SimFrame *bestResult)
 		double energy = pow(glm::length(bestResult->velocity),2) / 2 - mu/glm::length(bestResult->position);
 
 		output << bestResult->time << ",";
-		output << glm::length(bestResult->position) - bestResult->config->body.radius - 80000 << ",";
-		output << glm::length(bestResult->velocity) - 2278.9 << ",";
+		output << glm::length(bestResult->position) - bestResult->config->body.radius << ",";
+		output << glm::length(bestResult->velocity) << ",";
 		output << atan2(bestResult->position.x, bestResult->position.y)*180/PI << ",";
 		output << bestResult->throttle << ",";
 		output << angle << ",";

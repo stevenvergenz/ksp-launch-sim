@@ -130,7 +130,7 @@ void Simulator::run()
 	frame->throttle = 0.0;
 	frame->score = evaluateFrame(frame);
 
-	printf("%lf x %lf\n", frame->orbit().x, frame->orbit().y);
+	//printf("%lf x %lf\n", frame->orbit().x, frame->orbit().y);
 	queue.push(frame);
 
 	// while frames in buffer
@@ -182,11 +182,12 @@ void Simulator::run()
 		{
 			// generate successors for frame
 
-			frame->nextCount = 2*PI/frame->config->params.radialStep * 1/frame->config->params.throttleStep + 1;
+			frame->nextCount = 2*PI/frame->config->params.radialStep * 1/frame->config->params.throttleStep; // + 1;
 			frame->next = new SimFrame*[frame->nextCount];
 			int i = 0;
 
 			// what if I do nothing?
+			//SimFrame* next;
 			SimFrame* next = computeNextFrame(frame, glm::dvec2(0,1), 0);
 			next->orientation = glm::dvec2(0,1);
 			next->throttle = 0;
@@ -399,12 +400,37 @@ SimFrame* Simulator::computeNextFrame(SimFrame *prevFrame, glm::dvec2 orientatio
 	//printf("Thrust accel: %lf %lf\n", thrustAccel.x, thrustAccel.y);
 
 	// compute gravitational acceleration
-	glm::dvec2 g = G * config->body.mass / pow(glm::length(prevFrame->position), 2) * -glm::normalize(prevFrame->position);
+	//glm::dvec2 g = G * config->body.mass / pow(glm::length(prevFrame->position), 2) * -glm::normalize(prevFrame->position);
 
 	// apply forces
-	curFrame->velocity = (g+thrustAccel+drag)*dt + prevFrame->velocity;
-	curFrame->position = 0.5*(g+thrustAccel+drag)*pow(dt,2) + prevFrame->velocity*dt + prevFrame->position;
+	//curFrame->velocity = (g+thrustAccel+drag)*dt + prevFrame->velocity;
+	//curFrame->position = 0.5*(g+thrustAccel+drag)*pow(dt,2) + prevFrame->velocity*dt + prevFrame->position;
+
+	// find position and velocity at t+dt using RK4
+	glm::dvec2 x1, x2, x3, x4, v1, v2, v3, v4, a1, a2, a3, a4;
+
+	x1 = prevFrame->position;
+	v1 = prevFrame->velocity;
+	a1 = G * config->body.mass / pow(glm::length(x1), 2) * -glm::normalize(x1) + thrustAccel + drag;
+
+	x2 = prevFrame->position + v1*(dt/2);
+	v2 = prevFrame->velocity + a1*(dt/2);
+	a2 = G * config->body.mass / pow(glm::length(x2), 2) * -glm::normalize(x2) + thrustAccel + drag;
+
+	x3 = prevFrame->position + v2*(dt/2);
+	v3 = prevFrame->velocity + a2*(dt/2);
+	a3 = G * config->body.mass / pow(glm::length(x3), 2) * -glm::normalize(x3) + thrustAccel + drag;
+
+	x4 = prevFrame->position + v3*dt;
+	v4 = prevFrame->velocity + a3*dt;
+	a4 = G * config->body.mass / pow(glm::length(x4), 2) * -glm::normalize(x4) + thrustAccel + drag;
+
+	curFrame->position = prevFrame->position + (dt/6)*(v1 + 2.0*v2 + 2.0*v3 + v4);
+	curFrame->velocity = prevFrame->velocity + (dt/6)*(a1 + 2.0*a2 + 2.0*a3 + a4);
+
+	// update fuel consumption
 	curFrame->deltaVSpent = prevFrame->deltaVSpent + prevFrame->deltaVVac() - curFrame->deltaVVac();
+
 	return curFrame;
 }
 
